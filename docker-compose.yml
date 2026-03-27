@@ -28,6 +28,8 @@ services:
           tail -f /dev/null
         else
           composer install --no-interaction
+          symfony server:stop 2>/dev/null || true
+          rm -rf /home/devuser/.symfony5/var/* 2>/dev/null || true
           symfony server:start --port=8000 --allow-all-ip --no-tls
         fi
       "
