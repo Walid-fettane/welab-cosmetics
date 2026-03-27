@@ -1,0 +1,7 @@
+{
+  "/api": {
+    "target": "http://php:8000",
+    "secure": false,
+    "changeOrigin": true
+  }
+}

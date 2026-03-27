@@ -1,0 +1,64 @@
+<!-- Page de saisie du pseudo. -->
+<!-- Le joueur entre son nom, puis clique "Jouer !" pour démarrer. -->
+
+<main class="pseudo-page">
+
+  <div class="pseudo-card">
+
+    <!-- Icône décorative -->
+    <div class="pseudo-logo" aria-hidden="true">🎮</div>
+
+    <!-- Titre de la section -->
+    <h1 class="pseudo-title">Qui es-tu ?</h1>
+    <p class="pseudo-subtitle">Choisis un pseudo pour commencer ta partie.</p>
+
+    <!-- Formulaire de saisie du pseudo -->
+    <!-- (ngSubmit) : quand le joueur appuie sur Entrée, appelle jouer() -->
+    <form class="pseudo-form" (ngSubmit)="jouer()">
+
+      <!-- Champ de saisie du pseudo -->
+      <!-- [value]="pseudo()" lit la valeur du signal -->
+      <!-- (input)="..." met à jour le signal quand le joueur tape -->
+      <div class="form-group">
+        <label for="pseudo-input" class="form-label">Ton pseudo</label>
+        <input
+          id="pseudo-input"
+          type="text"
+          class="form-input"
+          placeholder="Ex : AliceChimiste"
+          [value]="pseudo()"
+          (input)="pseudo.set($any($event.target).value)"
+          autocomplete="username"
+          maxlength="50"
+          [attr.aria-describedby]="erreur() ? 'pseudo-error' : null"
+          [attr.aria-invalid]="erreur() ? 'true' : null"
+        />
+      </div>
+
+      <!-- Message d'erreur (affiché seulement si erreur() n'est pas vide) -->
+      <!-- @if est la syntaxe Angular moderne (remplace *ngIf) -->
+      @if (erreur()) {
+        <p class="form-error" id="pseudo-error" role="alert">
+          ⚠️ {{ erreur() }}
+        </p>
+      }
+
+      <!-- Bouton de validation -->
+      <!-- [disabled] désactive le bouton pendant le chargement pour éviter les doubles clics -->
+      <button
+        type="submit"
+        class="btn-primary"
+        [disabled]="loading()"
+      >
+        @if (loading()) {
+          Chargement…
+        } @else {
+          Jouer !
+        }
+      </button>
+
+    </form>
+
+  </div>
+
+</main>

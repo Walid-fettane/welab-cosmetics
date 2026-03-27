@@ -1,0 +1,171 @@
+// Styles de la page de saisie du pseudo.
+// Design similaire à la page d'accueil : même fond dégradé bleu-violet,
+// même carte centrale, même bouton rose arrondi.
+
+$bg-start:         #1a0a3c;
+$bg-end:           #7c3aed;
+$color-white:      #ffffff;
+$color-pink:       #f9a8d4;
+$color-pink-hover: #f472b6;
+$color-error:      #fca5a5;   // Rouge clair pour les messages d'erreur
+
+// ---- Conteneur pleine page ----
+.pseudo-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, $bg-start 0%, $bg-end 100%);
+}
+
+// ---- Carte centrale ----
+.pseudo-card {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 1.5rem;
+  padding: 3rem 2.5rem;
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+// ---- Icône emoji ----
+.pseudo-logo {
+  font-size: 3.5rem;
+  display: block;
+  margin-bottom: 1rem;
+}
+
+// ---- Titre ----
+.pseudo-title {
+  color: $color-white;
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+// ---- Sous-titre ----
+.pseudo-subtitle {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.95rem;
+  margin-bottom: 2rem;
+}
+
+// ---- Formulaire ----
+.pseudo-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  text-align: left;
+}
+
+// ---- Groupe label + input ----
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+// ---- Label du champ ----
+.form-label {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+// ---- Champ de saisie texte ----
+.form-input {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  color: $color-white;
+  font-size: 1rem;
+  width: 100%;
+  box-sizing: border-box;  // Inclut le padding dans la largeur totale
+  transition: border-color 0.2s, background 0.2s;
+
+  // Texte du placeholder (indice dans le champ vide)
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+  }
+
+  // Quand le joueur clique dedans (focus), on met en avant le bord
+  &:focus {
+    outline: none;
+    border-color: $color-pink;
+    background: rgba(255, 255, 255, 0.18);
+  }
+
+  // Accessibilité clavier
+  &:focus-visible {
+    outline: 3px solid $color-pink;
+    outline-offset: 2px;
+  }
+
+  // Style d'erreur (quand aria-invalid="true")
+  &[aria-invalid='true'] {
+    border-color: $color-error;
+  }
+}
+
+// ---- Message d'erreur ----
+.form-error {
+  color: $color-error;
+  font-size: 0.875rem;
+  background: rgba(252, 165, 165, 0.1);
+  border: 1px solid rgba(252, 165, 165, 0.3);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  margin: 0;
+}
+
+// ---- Bouton principal ----
+.btn-primary {
+  background: $color-pink;
+  color: #1a0a3c;
+  border: none;
+  border-radius: 50px;
+  padding: 0.875rem 2rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+  box-shadow: 0 4px 15px rgba(249, 168, 212, 0.4);
+  margin-top: 0.5rem;
+
+  &:hover:not(:disabled) {
+    background: $color-pink-hover;
+    box-shadow: 0 6px 20px rgba(244, 114, 182, 0.5);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  &:focus-visible {
+    outline: 3px solid $color-white;
+    outline-offset: 3px;
+  }
+
+  // Apparence quand le bouton est désactivé (pendant le chargement)
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+// ---- Adaptation mobile ----
+@media (max-width: 480px) {
+  .pseudo-card {
+    padding: 2rem 1.5rem;
+  }
+
+  .pseudo-title {
+    font-size: 1.5rem;
+  }
+}

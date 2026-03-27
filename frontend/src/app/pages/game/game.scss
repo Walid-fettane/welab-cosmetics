@@ -1,0 +1,377 @@
+// Styles de la page de jeu principale.
+// C'est la page la plus complexe visuellement :
+//   - En-tête avec le nom du mini-jeu et le score
+//   - Barre de progression (3 pastilles pour les mini-jeux)
+//   - Carte de la question
+//   - Grille des 4 boutons de choix (avec états : sélectionné, correct, faux)
+//   - Zone de résultat (verte ou rouge selon la réponse)
+
+$bg-start:         #1a0a3c;
+$bg-end:           #7c3aed;
+$color-white:      #ffffff;
+$color-pink:       #f9a8d4;
+$color-pink-hover: #f472b6;
+$color-correct:    #4ade80;   // Vert pour bonne réponse
+$color-wrong:      #f87171;   // Rouge pour mauvaise réponse
+$color-card:       rgba(255, 255, 255, 0.08);
+
+// ---- Conteneur global ----
+.game-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, $bg-start 0%, $bg-end 100%);
+  padding: 0 0 2rem;
+}
+
+// ---- En-tête (nom du mini-jeu + score) ----
+.game-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.header-minijeu {
+  color: $color-pink;
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.header-score {
+  color: $color-white;
+  font-weight: 700;
+  font-size: 1.1rem;
+  background: rgba(249, 168, 212, 0.15);
+  border: 1px solid rgba(249, 168, 212, 0.3);
+  border-radius: 50px;
+  padding: 0.25rem 1rem;
+}
+
+// ---- Barre de progression (3 pastilles numérotées) ----
+.game-progress {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.5rem;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+// Pastille représentant un mini-jeu (chiffre 1, 2 ou 3)
+.progress-step {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.5);
+  transition: all 0.3s;
+
+  // Mini-jeu en cours : mis en avant avec la couleur rose
+  &.active {
+    background: $color-pink;
+    border-color: $color-pink;
+    color: #1a0a3c;
+    transform: scale(1.15);
+  }
+
+  // Mini-jeu déjà terminé : vert et coché
+  &.done {
+    background: $color-correct;
+    border-color: $color-correct;
+    color: #14532d;
+  }
+}
+
+// Label "Facile — Q3/5" à droite des pastilles
+.progress-label {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.85rem;
+  margin-left: 0.5rem;
+  font-weight: 600;
+}
+
+// ---- Zone principale (question + choix) ----
+.game-main {
+  flex: 1;       // Prend tout l'espace restant en hauteur
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.5rem;
+  max-width: 640px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+// ---- État chargement ----
+.game-loading {
+  text-align: center;
+  color: $color-white;
+  padding: 3rem;
+
+  .loading-spinner {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: 1rem;
+    animation: spin 1s linear infinite;
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg);   }
+  to   { transform: rotate(360deg); }
+}
+
+// ---- Message d'erreur ----
+.game-error {
+  background: rgba(248, 113, 113, 0.15);
+  border: 1px solid rgba(248, 113, 113, 0.4);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  color: #fca5a5;
+  width: 100%;
+  text-align: center;
+}
+
+// ---- Carte de la question ----
+.question-card {
+  background: $color-card;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 1.25rem;
+  padding: 1.75rem;
+  width: 100%;
+}
+
+.question-number {
+  color: $color-pink;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0 0 0.75rem;
+}
+
+.question-enonce {
+  color: $color-white;
+  font-size: 1.15rem;
+  font-weight: 600;
+  line-height: 1.5;
+  margin: 0;
+}
+
+// ---- Grille des 4 boutons de choix ----
+.choices-grid {
+  display: grid;
+  // 2 colonnes égales sur tablette et desktop
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+// ---- Bouton de choix individuel ----
+.choice-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 1rem;
+  padding: 1rem;
+  color: $color-white;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  line-height: 1.4;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+
+  &:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.4);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  &:focus-visible {
+    outline: 3px solid $color-pink;
+    outline-offset: 2px;
+  }
+
+  // Choix sélectionné par le joueur (avant validation)
+  &.selected {
+    background: rgba(249, 168, 212, 0.2);
+    border-color: $color-pink;
+    color: $color-pink;
+    font-weight: 700;
+  }
+
+  // Bonne réponse révélée (après validation)
+  &.correct {
+    background: rgba(74, 222, 128, 0.2);
+    border-color: $color-correct;
+    color: $color-correct;
+    font-weight: 700;
+  }
+
+  // Mauvaise réponse choisie (après validation)
+  &.wrong {
+    background: rgba(248, 113, 113, 0.2);
+    border-color: $color-wrong;
+    color: $color-wrong;
+    font-weight: 700;
+  }
+
+  // Désactivé après validation : pas de curseur pointer
+  &:disabled {
+    cursor: default;
+
+    // Les boutons non impliqués restent légèrement opaques
+    &:not(.correct):not(.wrong):not(.selected) {
+      opacity: 0.5;
+    }
+  }
+}
+
+// ---- Zone de résultat (correct ou faux) ----
+.result-feedback {
+  width: 100%;
+  border-radius: 1rem;
+  padding: 1.25rem 1.5rem;
+  text-align: center;
+  animation: slideIn 0.3s ease-out;   // Petite animation d'apparition
+
+  // Version "bonne réponse" (fond vert)
+  &.correct {
+    background: rgba(74, 222, 128, 0.15);
+    border: 1px solid rgba(74, 222, 128, 0.4);
+  }
+
+  // Version "mauvaise réponse" (fond rouge)
+  &.wrong {
+    background: rgba(248, 113, 113, 0.15);
+    border: 1px solid rgba(248, 113, 113, 0.4);
+  }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0);     }
+}
+
+.result-icon {
+  font-size: 2.5rem;
+  margin: 0 0 0.25rem;
+}
+
+.result-message {
+  color: $color-white;
+  font-weight: 700;
+  font-size: 1.1rem;
+  margin: 0 0 0.5rem;
+}
+
+.result-bonne-reponse {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.95rem;
+  margin: 0;
+
+  strong {
+    color: $color-white;
+  }
+}
+
+// ---- Boutons d'action ----
+.game-actions {
+  width: 100%;
+  display: flex;
+  gap: 0.75rem;
+}
+
+// Bouton "Valider" (rose comme le bouton principal)
+.btn-primary {
+  background: $color-pink;
+  color: #1a0a3c;
+  border: none;
+  border-radius: 50px;
+  padding: 0.875rem 2rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  flex: 1;
+  transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+  box-shadow: 0 4px 15px rgba(249, 168, 212, 0.35);
+
+  &:hover:not(:disabled) {
+    background: $color-pink-hover;
+    box-shadow: 0 6px 20px rgba(244, 114, 182, 0.5);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  &:focus-visible {
+    outline: 3px solid $color-white;
+    outline-offset: 3px;
+  }
+
+  // Désactivé si aucun choix sélectionné
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+// Bouton "Question suivante" (contour blanc, fond transparent)
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.12);
+  color: $color-white;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-radius: 50px;
+  padding: 0.875rem 2rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  flex: 1;
+  transition: background 0.2s, border-color 0.2s, transform 0.1s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.7);
+  }
+
+  &:active {
+    transform: scale(0.97);
+  }
+
+  &:focus-visible {
+    outline: 3px solid $color-white;
+    outline-offset: 3px;
+  }
+}
+
+// ---- Adaptation mobile (une seule colonne pour les choix) ----
+@media (max-width: 520px) {
+  .choices-grid {
+    grid-template-columns: 1fr;   // Une seule colonne sur mobile
+  }
+
+  .game-main {
+    padding: 1rem;
+  }
+
+  .question-enonce {
+    font-size: 1rem;
+  }
+}

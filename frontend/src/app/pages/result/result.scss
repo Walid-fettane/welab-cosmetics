@@ -1,0 +1,234 @@
+// Styles de la page de résultats.
+// Design : même fond dégradé bleu-violet, carte centrale avec le score mis en valeur,
+// barre de progression colorée, bouton Rejouer rose.
+
+$bg-start:         #1a0a3c;
+$bg-end:           #7c3aed;
+$color-white:      #ffffff;
+$color-pink:       #f9a8d4;
+$color-pink-hover: #f472b6;
+
+// ---- Conteneur pleine page ----
+.result-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, $bg-start 0%, $bg-end 100%);
+}
+
+// ---- Carte principale ----
+.result-card {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 1.5rem;
+  padding: 3rem 2.5rem;
+  max-width: 480px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+// ---- État chargement ----
+.result-loading {
+  color: $color-white;
+  font-size: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 2rem;
+
+  span {
+    font-size: 3rem;
+    animation: pulse 1s ease-in-out infinite;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1;   }
+  50%       { opacity: 0.4; }
+}
+
+// ---- Grand emoji de performance ----
+.result-emoji {
+  font-size: 4.5rem;
+  line-height: 1;
+  animation: pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes pop {
+  from { transform: scale(0); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+// ---- Titre ----
+.result-title {
+  color: $color-white;
+  font-size: 1.9rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+// ---- Message de félicitation ----
+.result-message {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 1rem;
+  line-height: 1.5;
+  margin: 0;
+  font-style: italic;
+}
+
+// ---- Bloc score principal ----
+.result-score-block {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 1rem;
+  padding: 1.5rem 2rem;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+// Chiffre du score (très grand)
+.result-score-value {
+  color: $color-pink;
+  font-size: 4rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+// "/90" en plus petit à côté
+.result-score-max {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: -0.5rem;
+}
+
+// ---- Barre de progression du score ----
+.result-progress-bar {
+  width: 100%;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 50px;
+  overflow: hidden;
+}
+
+// Partie remplie de la barre (largeur = pourcentage du score)
+.result-progress-fill {
+  height: 100%;
+  border-radius: 50px;
+  // Dégradé rose → violet pour la barre de progression
+  background: linear-gradient(90deg, $color-pink, #c084fc);
+  transition: width 1s ease-out;   // Animation de remplissage
+}
+
+// Texte du pourcentage
+.result-pourcentage {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+// ---- Statistiques (grille de petites infos) ----
+.result-stats {
+  display: flex;
+  gap: 1rem;
+  width: 100%;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.stat-item {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  min-width: 100px;
+  flex: 1;
+}
+
+.stat-value {
+  color: $color-white;
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.stat-label {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+// ---- Avertissement (erreur API) ----
+.result-warning {
+  color: #fcd34d;    // Jaune ambre pour un avertissement (pas une erreur critique)
+  font-size: 0.85rem;
+  background: rgba(252, 211, 77, 0.1);
+  border: 1px solid rgba(252, 211, 77, 0.25);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  width: 100%;
+  margin: 0;
+}
+
+// ---- Bouton Rejouer ----
+.btn-primary {
+  background: $color-pink;
+  color: #1a0a3c;
+  border: none;
+  border-radius: 50px;
+  padding: 0.875rem 3rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+  box-shadow: 0 4px 15px rgba(249, 168, 212, 0.4);
+
+  &:hover {
+    background: $color-pink-hover;
+    box-shadow: 0 6px 20px rgba(244, 114, 182, 0.5);
+  }
+
+  &:active {
+    transform: scale(0.97);
+  }
+
+  &:focus-visible {
+    outline: 3px solid $color-white;
+    outline-offset: 3px;
+  }
+}
+
+// ---- Adaptation mobile ----
+@media (max-width: 480px) {
+  .result-card {
+    padding: 2rem 1.5rem;
+  }
+
+  .result-title {
+    font-size: 1.5rem;
+  }
+
+  .result-score-value {
+    font-size: 3rem;
+  }
+
+  .result-stats {
+    flex-direction: column;
+  }
+}

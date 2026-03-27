@@ -1,1 +1,58 @@
-/* You can add global styles to this file, and also import other style files */
+/* Styles globaux de l'application We-Lab Cosmetics. */
+/* Ce fichier s'applique à TOUTES les pages, contrairement aux fichiers */
+/* .scss des composants qui ne s'appliquent qu'à leur propre page. */
+
+/* ---- Réinitialisation des styles par défaut du navigateur ---- */
+/* Chaque navigateur (Chrome, Firefox...) a ses propres marges et tailles par défaut. */
+/* On les remet à zéro pour partir sur une base commune et prévisible. */
+*, *::before, *::after {
+  box-sizing: border-box;  /* La taille inclut le padding et la bordure (plus intuitif) */
+  margin: 0;
+  padding: 0;
+}
+
+/* ---- Styles de base du document ---- */
+html, body {
+  height: 100%;
+  /* Police système : utilise la police native de l'OS pour de meilleures performances */
+  font-family:
+    -apple-system,       /* macOS/iOS */
+    BlinkMacSystemFont,  /* Chrome sur macOS */
+    'Segoe UI',          /* Windows */
+    Roboto,              /* Android / Google */
+    'Helvetica Neue',
+    Arial,
+    sans-serif;
+  font-size: 16px;       /* Taille de base : 1rem = 16px */
+  line-height: 1.5;
+  /* Anti-aliasing : lissage des polices pour un rendu plus propre */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ---- Amélioration des images ---- */
+img, svg {
+  display: block;
+  max-width: 100%;
+}
+
+/* ---- Amélioration des listes ---- */
+/* Les listes dans les composants gardent leurs styles par défaut ;
+   seules les listes explicitement stylisées les perdent. */
+ul[role='list'],
+ol[role='list'] {
+  list-style: none;
+}
+
+/* ---- Focus visible pour l'accessibilité au clavier ---- */
+/* Quand on navigue avec Tab, l'élément actif doit être clairement visible. */
+/* On utilise :focus-visible (pas :focus) pour ne pas affecter les clics souris. */
+:focus-visible {
+  outline: 3px solid #f9a8d4;  /* Contour rose (couleur accent du jeu) */
+  outline-offset: 2px;
+}
+
+/* Retire le contour quand on clique (pas en navigation clavier) */
+:focus:not(:focus-visible) {
+  outline: none;
+}

@@ -1,0 +1,145 @@
+// Styles de la page d'accueil.
+// On utilise SCSS (= CSS avec des variables et de l'imbrication).
+// Le fond dégradé bleu-violet est défini ici et partagé avec les autres pages
+// via des classes CSS communes définies dans styles.scss (ou dupliquées ici).
+
+// ---- Variables de couleurs ----
+$bg-start:    #1a0a3c;       // Bleu nuit profond (début du dégradé)
+$bg-end:      #7c3aed;       // Violet vif (fin du dégradé)
+$color-white: #ffffff;       // Blanc pour les textes
+$color-pink:  #f9a8d4;       // Rose clair pour le bouton (accent)
+$color-pink-hover: #f472b6;  // Rose plus soutenu au survol
+
+// ---- Conteneur pleine page ----
+.home-page {
+  // Occupe tout l'écran en hauteur et en largeur
+  min-height: 100vh;
+  display: flex;
+  align-items: center;       // Centre verticalement
+  justify-content: center;   // Centre horizontalement
+  padding: 1.5rem;
+
+  // Dégradé du fond : bleu nuit → violet (direction diagonale)
+  background: linear-gradient(135deg, $bg-start 0%, $bg-end 100%);
+}
+
+// ---- Carte centrale qui contient tout le contenu ----
+.home-card {
+  // Fond semi-transparent : laisse voir le dégradé derrière
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);           // Effet "verre dépoli"
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 1.5rem;                 // Coins très arrondis
+  padding: 3rem 2.5rem;
+  max-width: 480px;
+  width: 100%;
+  text-align: center;
+
+  // Légère ombre pour donner de la profondeur
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+// ---- Emoji logo en haut de la carte ----
+.home-logo {
+  font-size: 4rem;       // Grande taille pour attirer l'oeil
+  margin-bottom: 1rem;
+  display: block;
+  // Animation d'oscillation légère pour rendre la page vivante
+  animation: float 3s ease-in-out infinite;
+}
+
+// Animation de flottement
+@keyframes float {
+  0%, 100% { transform: translateY(0);    }
+  50%       { transform: translateY(-8px); }
+}
+
+// ---- Titre principal ----
+.home-title {
+  color: $color-white;
+  font-size: 1.8rem;
+  font-weight: 700;
+  line-height: 1.3;
+  margin-bottom: 1rem;
+}
+
+// Le nom "We Lab !" en plus grand et rose pour attirer l'attention
+.home-brand {
+  color: $color-pink;
+  font-size: 2.2rem;
+}
+
+// ---- Texte de description ----
+.home-description {
+  color: rgba(255, 255, 255, 0.8);   // Blanc légèrement transparent
+  font-size: 1rem;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+// ---- Liste des 3 mini-jeux ----
+.home-minijeux {
+  list-style: none;    // Supprime les puces par défaut
+  padding: 0;
+  margin: 0 0 2rem;
+
+  li {
+    color: rgba(255, 255, 255, 0.9);
+    padding: 0.5rem 0;
+    font-size: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+
+    // Pas de séparateur sous le dernier élément
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+}
+
+// ---- Bouton principal (rose arrondi) ----
+// Classe réutilisée sur les autres pages aussi
+.btn-primary {
+  background: $color-pink;
+  color: #1a0a3c;               // Texte sombre sur fond rose pour le contraste
+  border: none;
+  border-radius: 50px;           // Complètement arrondi (pill shape)
+  padding: 0.875rem 3rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+  box-shadow: 0 4px 15px rgba(249, 168, 212, 0.4);
+
+  // Effet au survol de la souris
+  &:hover {
+    background: $color-pink-hover;
+    box-shadow: 0 6px 20px rgba(244, 114, 182, 0.5);
+  }
+
+  // Légère animation quand on clique
+  &:active {
+    transform: scale(0.97);
+  }
+
+  // Accessibilité : contour visible quand on navigue au clavier
+  &:focus-visible {
+    outline: 3px solid $color-white;
+    outline-offset: 3px;
+  }
+}
+
+// ---- Adaptation mobile (écrans < 480px) ----
+@media (max-width: 480px) {
+  .home-card {
+    padding: 2rem 1.5rem;
+  }
+
+  .home-title {
+    font-size: 1.5rem;
+  }
+
+  .home-brand {
+    font-size: 1.8rem;
+  }
+}

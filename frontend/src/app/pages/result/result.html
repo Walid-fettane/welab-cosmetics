@@ -1,0 +1,102 @@
+<!-- Page de résultats : affiche le bilan de la partie. -->
+<!-- Appelée après que toutes les questions ont été répondues. -->
+
+<main class="result-page">
+
+  <div class="result-card">
+
+    <!-- ============================================================ -->
+    <!-- État chargement (pendant l'appel à terminerPartie)           -->
+    <!-- ============================================================ -->
+    @if (isLoading()) {
+      <div class="result-loading" role="status" aria-live="polite">
+        <span aria-hidden="true">⏳</span>
+        <p>Calcul du score final…</p>
+      </div>
+    }
+
+    <!-- ============================================================ -->
+    <!-- Contenu principal (affiché une fois le chargement terminé)   -->
+    <!-- ============================================================ -->
+    @if (!isLoading()) {
+
+      <!-- Emoji du niveau de performance (trophée, étoile...) -->
+      <div class="result-emoji" aria-hidden="true">{{ emojiNiveau() }}</div>
+
+      <!-- Titre -->
+      <h1 class="result-title">Partie terminée !</h1>
+
+      <!-- Message de félicitation adapté au score -->
+      <p class="result-message">{{ messageFelicitation() }}</p>
+
+      <!-- -------------------------------------------------------- -->
+      <!-- Affichage du score principal                             -->
+      <!-- -------------------------------------------------------- -->
+      <div class="result-score-block" aria-label="Score final">
+
+        <span class="result-score-value">{{ scoreFinal() }}</span>
+        <span class="result-score-max">/ {{ scoreMax }}</span>
+
+        <!-- Barre de progression visuelle du score -->
+        <div class="result-progress-bar" role="progressbar"
+          [attr.aria-valuenow]="scoreFinal()"
+          [attr.aria-valuemin]="0"
+          [attr.aria-valuemax]="scoreMax"
+          aria-label="Progression du score"
+        >
+          <div
+            class="result-progress-fill"
+            [style.width]="pourcentage() + '%'"
+          ></div>
+        </div>
+
+        <p class="result-pourcentage">{{ pourcentage() }}% de réussite</p>
+
+      </div>
+
+      <!-- -------------------------------------------------------- -->
+      <!-- Statistiques supplémentaires                              -->
+      <!-- -------------------------------------------------------- -->
+      <div class="result-stats">
+
+        <div class="stat-item">
+          <span class="stat-value">{{ nbReponses() }}</span>
+          <span class="stat-label">réponses soumises</span>
+        </div>
+
+        <div class="stat-item">
+          <span class="stat-value">3</span>
+          <span class="stat-label">mini-jeux complétés</span>
+        </div>
+
+        @if (gameState.joueur()) {
+          <div class="stat-item">
+            <span class="stat-value">{{ gameState.joueur()!.pseudo }}</span>
+            <span class="stat-label">joueur</span>
+          </div>
+        }
+
+      </div>
+
+      <!-- Avertissement si erreur API (score approximatif) -->
+      @if (erreur()) {
+        <p class="result-warning" role="alert">⚠️ {{ erreur() }}</p>
+      }
+
+      <!-- -------------------------------------------------------- -->
+      <!-- Bouton Rejouer                                            -->
+      <!-- -------------------------------------------------------- -->
+      <button
+        type="button"
+        class="btn-primary"
+        (click)="rejouer()"
+      >
+        🔄 Rejouer
+      </button>
+
+    }
+    <!-- Fin @if !isLoading() -->
+
+  </div>
+
+</main>

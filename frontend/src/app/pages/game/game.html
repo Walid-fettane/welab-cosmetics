@@ -1,0 +1,177 @@
+<!-- Page principale du jeu. -->
+<!-- Affiche les questions une par une avec 4 choix de réponse. -->
+<!-- Gère la progression : mini-jeu → niveau (facile/moyen/difficile) → questions. -->
+
+<div class="game-page">
+
+  <!-- ============================================================ -->
+  <!-- EN-TÊTE : informations de progression et score               -->
+  <!-- ============================================================ -->
+  <header class="game-header">
+
+    <!-- Nom du mini-jeu en cours (ex: "Ingrédients & Produits") -->
+    @if (currentMiniJeu()) {
+      <span class="header-minijeu">{{ currentMiniJeu().nom }}</span>
+    }
+
+    <!-- Score actuel du joueur (mis à jour en temps réel après chaque bonne réponse) -->
+    <span class="header-score">Score : {{ gameState.score() }}</span>
+
+  </header>
+
+  <!-- ============================================================ -->
+  <!-- BARRE DE PROGRESSION                                         -->
+  <!-- Montre visuellement où en est le joueur dans le jeu         -->
+  <!-- ============================================================ -->
+  <div class="game-progress" aria-label="Progression dans le jeu">
+
+    <!-- Les 3 mini-jeux représentés par des pastilles colorées -->
+    @for (mj of gameState.miniJeux(); track mj.id; let i = $index) {
+      <div
+        class="progress-step"
+        [class.active]="i === miniJeuIndex()"
+        [class.done]="i < miniJeuIndex()"
+        [attr.aria-label]="mj.nom + (i < miniJeuIndex() ? ' - terminé' : i === miniJeuIndex() ? ' - en cours' : '')"
+      >
+        {{ i + 1 }}
+      </div>
+    }
+
+    <!-- Niveau et numéro de question dans ce niveau -->
+    <span class="progress-label">
+      {{ difficulteLabel() }} — Q{{ numeroQuestion() }}/{{ questions().length }}
+    </span>
+
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- ZONE PRINCIPALE DU JEU                                       -->
+  <!-- ============================================================ -->
+  <main class="game-main">
+
+    <!-- --- État chargement --- -->
+    @if (isLoading()) {
+      <div class="game-loading" role="status" aria-live="polite">
+        <span class="loading-spinner" aria-hidden="true">⏳</span>
+        <p>Chargement des questions…</p>
+      </div>
+    }
+
+    <!-- --- Message d'erreur --- -->
+    @if (erreur()) {
+      <div class="game-error" role="alert">
+        ⚠️ {{ erreur() }}
+      </div>
+    }
+
+    <!-- --- Contenu principal : question + choix --- -->
+    <!-- Affiché seulement quand les questions sont chargées -->
+    @if (!isLoading() && currentQuestion()) {
+
+      <!-- Carte de la question -->
+      <div class="question-card">
+
+        <!-- Numérotation de la question -->
+        <p class="question-number">
+          Question {{ numeroQuestion() }} sur {{ questions().length }}
+        </p>
+
+        <!-- Texte de la question -->
+        <h2 class="question-enonce">{{ currentQuestion().enonce }}</h2>
+
+      </div>
+
+      <!-- -------------------------------------------------------- -->
+      <!-- GRILLE DES 4 CHOIX DE RÉPONSE                            -->
+      <!-- Chaque bouton change de couleur selon l'état :           -->
+      <!--   - sélectionné (avant validation) : bordure rose        -->
+      <!--   - bonne réponse (après validation) : vert              -->
+      <!--   - mauvaise réponse choisie (après validation) : rouge  -->
+      <!-- -------------------------------------------------------- -->
+      <div class="choices-grid" role="group" aria-label="Choix de réponse">
+
+        @for (choix of currentQuestion().choix_possibles; track choix) {
+          <button
+            type="button"
+            class="choice-btn"
+            [class.selected]="selectedChoice() === choix && reponseResult() === null"
+            [class.correct]="reponseResult() !== null && choix === reponseResult()!.bonne_reponse"
+            [class.wrong]="reponseResult() !== null && selectedChoice() === choix && !reponseResult()!.correct"
+            [disabled]="reponseResult() !== null"
+            (click)="selectionnerChoix(choix)"
+            [attr.aria-pressed]="selectedChoice() === choix"
+          >
+            {{ choix }}
+          </button>
+        }
+
+      </div>
+
+      <!-- -------------------------------------------------------- -->
+      <!-- ZONE DE RÉSULTAT (apparaît après validation)             -->
+      <!-- -------------------------------------------------------- -->
+      @if (reponseResult()) {
+        <div
+          class="result-feedback"
+          [class.correct]="reponseResult()!.correct"
+          [class.wrong]="!reponseResult()!.correct"
+          role="alert"
+          aria-live="assertive"
+        >
+
+          <!-- Icône et message principal -->
+          <p class="result-icon">
+            {{ reponseResult()!.correct ? '✅' : '❌' }}
+          </p>
+          <p class="result-message">
+            @if (reponseResult()!.correct) {
+              Bonne réponse ! +{{ reponseResult()!.score_obtenu }} point(s)
+            } @else {
+              Mauvaise réponse…
+            }
+          </p>
+
+          <!-- Toujours afficher la bonne réponse pour apprendre -->
+          <p class="result-bonne-reponse">
+            ✔ Bonne réponse : <strong>{{ reponseResult()!.bonne_reponse }}</strong>
+          </p>
+
+        </div>
+      }
+
+      <!-- -------------------------------------------------------- -->
+      <!-- BOUTONS D'ACTION                                         -->
+      <!-- -------------------------------------------------------- -->
+      <div class="game-actions">
+
+        <!-- Bouton "Valider" : visible seulement si pas encore validé -->
+        @if (reponseResult() === null) {
+          <button
+            type="button"
+            class="btn-primary"
+            [disabled]="selectedChoice() === null"
+            (click)="valider()"
+          >
+            Valider
+          </button>
+        }
+
+        <!-- Bouton "Question suivante" : visible après validation -->
+        @if (reponseResult() !== null) {
+          <button
+            type="button"
+            class="btn-secondary"
+            (click)="questionSuivante()"
+          >
+            Question suivante →
+          </button>
+        }
+
+      </div>
+
+    }
+    <!-- Fin @if currentQuestion() -->
+
+  </main>
+
+</div>
