@@ -1,0 +1,106 @@
+services:
+  # ===========================================
+  # SYMFONY API (Backend PHP)
+  # ===========================================
+  php:
+    build:
+      context: ./docker/php
+      args:
+        USERID: ${USERID:-1000}
+        GROUPID: ${GROUPID:-1000}
+    container_name: welab-php
+    volumes:
+      - ./backend:/var/www/html
+    ports:
+      - "${SYMFONY_PORT:-8000}:8000"
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-welab}:${POSTGRES_PASSWORD:-welab123}@postgres:5432/${POSTGRES_DB:-welab_db}?serverVersion=16&charset=utf8
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - welab-network
+    working_dir: /var/www/html
+    command: >
+      bash -c "
+        if [ ! -f composer.json ]; then
+          echo 'En attente du projet Symfony...'
+          tail -f /dev/null
+        else
+          composer install --no-interaction
+          symfony server:start --port=8000 --allow-all-ip --no-tls
+        fi
+      "
+
+  # ===========================================
+  # ANGULAR (Frontend)
+  # ===========================================
+  node:
+    build:
+      context: ./docker/node
+      args:
+        USERID: ${USERID:-1000}
+        GROUPID: ${GROUPID:-1000}
+    container_name: welab-angular
+    volumes:
+      - ./frontend:/app
+    ports:
+      - "${ANGULAR_PORT:-4200}:4200"
+    networks:
+      - welab-network
+    working_dir: /app
+    command: >
+      bash -c "
+        if [ ! -f package.json ]; then
+          echo 'En attente du projet Angular...'
+          tail -f /dev/null
+        else
+          npm install
+          ng serve --host 0.0.0.0 --poll 2000
+        fi
+      "
+
+  # ===========================================
+  # POSTGRESQL (Base de donnees)
+  # ===========================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: welab-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-welab}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-welab123}
+      POSTGRES_DB: ${POSTGRES_DB:-welab_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    networks:
+      - welab-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-welab} -d ${POSTGRES_DB:-welab_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ===========================================
+  # ADMINER (Interface BDD)
+  # ===========================================
+  adminer:
+    image: adminer:latest
+    container_name: welab-adminer
+    ports:
+      - "${ADMINER_PORT:-8080}:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+    depends_on:
+      - postgres
+    networks:
+      - welab-network
+
+networks:
+  welab-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

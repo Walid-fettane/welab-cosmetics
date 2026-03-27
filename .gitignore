@@ -1,0 +1,42 @@
+# =============================================================================
+# WE-LAB COSMETICS - GitIgnore
+# =============================================================================
+
+# Environnement
+.env
+!.env.example
+
+# Docker
+docker/postgres/data/
+
+# Symfony
+backend/var/
+backend/vendor/
+backend/.env.local
+backend/.env.local.php
+backend/.env.*.local
+backend/config/secrets/prod/prod.decrypt.private.php
+backend/public/bundles/
+backend/*.lock
+
+# Angular
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/.sass-cache/
+frontend/*.log
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
