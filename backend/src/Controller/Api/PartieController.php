@@ -91,12 +91,20 @@ final class PartieController extends AbstractController
             $miniJeuId, $difficulte, 5
         );
 
-        return $this->json(array_map(fn($q) => [
-            'id' => $q->getId(),
-            'enonce' => $q->getEnonce(),
-            'difficulte' => $q->getDifficulte(),
-            'choix_possibles' => $q->getChoixPossibles(),
-        ], $questions));
+        // On melange aleatoirement les choix de chaque question pour que la bonne reponse ne soit pas toujours en premier
+        $resultat = [];
+        foreach ($questions as $q) {
+            $choix = $q->getChoixPossibles();
+            shuffle($choix);
+            $resultat[] = [
+                'id' => $q->getId(),
+                'enonce' => $q->getEnonce(),
+                'difficulte' => $q->getDifficulte(),
+                'choix_possibles' => $choix,
+            ];
+        }
+
+        return $this->json($resultat);
     }
 
     #[Route('/{id}/reponses', name: 'api_partie_reponse', methods: ['POST'])]
