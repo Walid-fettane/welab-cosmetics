@@ -6,12 +6,22 @@ use App\Entity\Joueur;
 use App\Entity\MiniJeu;
 use App\Entity\Partie;
 use App\Entity\Question;
+// On importe l'entite Utilisateur pour pouvoir creer un compte admin
+use App\Entity\Utilisateur;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
 use Faker\Factory;
+// Service Symfony qui sait transformer un mot de passe en clair en mot de passe hache (jamais en clair en base)
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 class AppFixtures extends Fixture
 {
+    // Constructeur : Symfony injecte automatiquement le service de hachage des mots de passe
+    public function __construct(
+        private UserPasswordHasherInterface $passwordHasher,
+    ) {
+    }
+
     public function load(ObjectManager $manager): void
     {
         $faker = Factory::create('fr_FR');
@@ -195,7 +205,23 @@ class AppFixtures extends Fixture
         }
 
         // ============================================================
-        // 7. SAUVEGARDER EN BDD
+        // 7. ADMINISTRATEUR PAR DEFAUT
+        // ============================================================
+        // On cree un compte administrateur de base pour pouvoir se connecter a l'espace admin
+        $admin = new Utilisateur();
+        // Email qui servira d'identifiant de connexion
+        $admin->setEmail('admin@welab.fr');
+        // Le role ROLE_ADMIN donne acces aux routes protegees /api/admin/*
+        $admin->setRoles(['ROLE_ADMIN']);
+        // On hache le mot de passe "admin1234" avant de le stocker (jamais en clair !)
+        $admin->setPassword(
+            $this->passwordHasher->hashPassword($admin, 'admin1234')
+        );
+        // On demande a Doctrine de preparer la sauvegarde de cet utilisateur
+        $manager->persist($admin);
+
+        // ============================================================
+        // 8. SAUVEGARDER EN BDD
         // ============================================================
         $manager->flush();
     }

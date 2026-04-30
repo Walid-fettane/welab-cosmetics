@@ -19,6 +19,9 @@ backend/config/secrets/prod/prod.decrypt.private.php
 backend/public/bundles/
 backend/*.lock
 
+# Cles JWT (ne doivent jamais etre versionnees)
+backend/config/jwt/*.pem
+
 # Angular
 frontend/node_modules/
 frontend/dist/

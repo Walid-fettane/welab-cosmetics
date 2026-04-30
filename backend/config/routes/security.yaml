@@ -1,3 +1,9 @@
 _security_logout:
     resource: security.route_loader.logout
     type: service
+
+# Route declaree pour que Symfony reconnaisse le chemin /api/admin/login.
+# Le firewall "login" intercepte la requete et renvoie le JWT : aucun controller n'est necessaire.
+api_admin_login:
+    path: /api/admin/login
+    methods: [POST]
