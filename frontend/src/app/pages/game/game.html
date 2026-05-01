@@ -20,29 +20,63 @@
   </header>
 
   <!-- ============================================================ -->
-  <!-- BARRE DE PROGRESSION                                         -->
-  <!-- Montre visuellement où en est le joueur dans le jeu         -->
+  <!-- BANDEAU GLOBAL : numéro de question (local + global), chrono -->
+  <!-- La barre se remplit selon la progression globale (total dynamique de la partie) -->
   <!-- ============================================================ -->
-  <div class="game-progress" aria-label="Progression dans le jeu">
+  <section class="game-topbar" aria-label="Progression et chronomètre">
 
-    <!-- Les 3 mini-jeux représentés par des pastilles colorées -->
-    @for (mj of gameState.miniJeux(); track mj.id; let i = $index) {
-      <div
-        class="progress-step"
-        [class.active]="i === miniJeuIndex()"
-        [class.done]="i < miniJeuIndex()"
-        [attr.aria-label]="mj.nom + (i < miniJeuIndex() ? ' - terminé' : i === miniJeuIndex() ? ' - en cours' : '')"
-      >
-        {{ i + 1 }}
+    <!-- Ligne d'information : compteurs et badge à gauche, chrono à droite -->
+    <div class="topbar-info">
+
+      <!-- Groupe de gauche : compteur local + compteur global + badge difficulté -->
+      <div class="topbar-info-left">
+
+        <!-- Compteur LOCAL : position dans le mini-jeu courant (1 jusqu'au total du mini-jeu) -->
+        <span class="topbar-question">
+          Question {{ numeroQuestionLocale() }} / {{ totalQuestionsLocale() }}
+        </span>
+
+        <!-- Compteur GLOBAL : position depuis le début de la partie (1 jusqu'au total de la partie) -->
+        <span class="topbar-total">
+          Total {{ numeroQuestionGlobale() }} / {{ totalQuestionsPartie() }}
+        </span>
+
+        <!-- Badge coloré qui rappelle le niveau de la question affichée. -->
+        <!-- Masqué tant qu'aucune question n'est à l'écran (chargement, fin de partie). -->
+        @if (currentQuestion()) {
+          <span
+            class="topbar-difficulte"
+            [class.facile]="difficulte() === 1"
+            [class.moyen]="difficulte() === 2"
+            [class.difficile]="difficulte() === 3"
+          >
+            {{ difficulteLabel() }}
+          </span>
+        }
+
       </div>
-    }
 
-    <!-- Niveau et numéro de question dans ce niveau -->
-    <span class="progress-label">
-      {{ difficulteLabel() }} — Q{{ numeroQuestion() }}/{{ questions().length }}
-    </span>
+      <!-- Chrono "Temps écoulé : MM:SS" qui s'incrémente toutes les secondes -->
+      <span class="topbar-chrono" aria-label="Temps écoulé depuis le début de la partie">
+        Temps écoulé : {{ tempsFormate() }}
+      </span>
 
-  </div>
+    </div>
+
+    <!-- Barre visuelle remplie selon le pourcentage de progression -->
+    <!-- role="progressbar" et aria-valuenow rendent l'élément accessible aux lecteurs d'écran -->
+    <div
+      class="progress-bar"
+      role="progressbar"
+      aria-valuemin="0"
+      aria-valuemax="100"
+      [attr.aria-valuenow]="pourcentageProgression()"
+    >
+      <!-- Le remplissage en rose dont la largeur dépend du pourcentage calculé -->
+      <div class="progress-fill" [style.width.%]="pourcentageProgression()"></div>
+    </div>
+
+  </section>
 
   <!-- ============================================================ -->
   <!-- ZONE PRINCIPALE DU JEU                                       -->
