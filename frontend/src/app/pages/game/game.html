@@ -121,10 +121,20 @@
       <!--   - sélectionné (avant validation) : bordure rose        -->
       <!--   - bonne réponse (après validation) : vert              -->
       <!--   - mauvaise réponse choisie (après validation) : rouge  -->
+      <!--                                                          -->
+      <!-- AMÉLIORATION (ajoutée après la version de base) :        -->
+      <!-- chaque bouton affiche aussi un petit badge avec le       -->
+      <!-- numéro 1, 2, 3 ou 4 qui rappelle au joueur la touche     -->
+      <!-- clavier à presser pour sélectionner ce choix.            -->
       <!-- -------------------------------------------------------- -->
       <div class="choices-grid" role="group" aria-label="Choix de réponse">
 
-        @for (choix of currentQuestion().choix_possibles; track choix) {
+        <!-- "let i = $index" expose dans la variable i la position du -->
+        <!-- choix dans le tableau (0 pour le premier, 1 pour le 2e,   -->
+        <!-- etc.). $index est une variable spéciale fournie par le   -->
+        <!-- @for d'Angular. On l'utilise plus bas pour afficher      -->
+        <!-- "i + 1" et passer de 0-based à 1-based pour le joueur.   -->
+        @for (choix of currentQuestion().choix_possibles; track choix; let i = $index) {
           <button
             type="button"
             class="choice-btn"
@@ -135,7 +145,15 @@
             (click)="selectionnerChoix(choix)"
             [attr.aria-pressed]="selectedChoice() === choix"
           >
-            {{ choix }}
+            <!-- Badge numéro (1 à 4). aria-hidden="true" cache l'élément -->
+            <!-- aux lecteurs d'écran : le numéro est un repère visuel    -->
+            <!-- pour les utilisateurs clavier, mais redondant à l'oral   -->
+            <!-- (le lecteur d'écran lit déjà le texte du choix).         -->
+            <span class="choice-number" aria-hidden="true">{{ i + 1 }}</span>
+            <!-- Texte du choix : encapsulé dans un span pour pouvoir     -->
+            <!-- l'aligner proprement à côté du badge numéro grâce à      -->
+            <!-- "display: flex" appliqué au bouton parent.               -->
+            <span class="choice-text">{{ choix }}</span>
           </button>
         }
 
@@ -190,6 +208,27 @@
           </button>
         }
 
+        <!-- ====================================================== -->
+        <!-- AMÉLIORATION (ajoutée après la version de base)        -->
+        <!-- Bouton "Passer" : permet au joueur de passer une       -->
+        <!-- question s'il ne connait pas la réponse, plutôt que de -->
+        <!-- rester bloqué. La question est comptée comme           -->
+        <!-- incorrecte et la bonne réponse est révélée.            -->
+        <!-- Visible uniquement avant validation (à côté de         -->
+        <!-- "Valider"). Raccourci clavier équivalent : touche P.   -->
+        <!-- ====================================================== -->
+        @if (reponseResult() === null) {
+          <button
+            type="button"
+            class="btn-skip"
+            title="Passer cette question (raccourci : P)"
+            [disabled]="isLoading()"
+            (click)="passer()"
+          >
+            Passer
+          </button>
+        }
+
         <!-- Bouton "Question suivante" : visible après validation -->
         @if (reponseResult() !== null) {
           <button
@@ -207,5 +246,49 @@
     <!-- Fin @if currentQuestion() -->
 
   </main>
+
+  <!-- ============================================================ -->
+  <!-- AMÉLIORATION (ajoutée après la version de base) :            -->
+  <!-- BARRE D'AIDE CLAVIER                                         -->
+  <!--                                                              -->
+  <!-- Petite barre discrète en bas de la page qui rappelle au      -->
+  <!-- joueur les raccourcis clavier disponibles. Elle reste        -->
+  <!-- toujours visible (pas conditionnée au chargement d'une       -->
+  <!-- question) pour servir de pense-bête en permanence.           -->
+  <!--                                                              -->
+  <!-- La balise <aside> indique à un lecteur d'écran qu'il s'agit  -->
+  <!-- d'un contenu secondaire complémentaire au contenu principal. -->
+  <!-- aria-label donne un nom à la zone pour qu'elle soit          -->
+  <!-- annoncée comme "Raccourcis clavier" plutôt que "complément". -->
+  <!-- ============================================================ -->
+  <aside class="keyboard-help" aria-label="Raccourcis clavier">
+
+    <!-- Premier raccourci : touches 1 à 4 pour choisir une réponse -->
+    <span class="kbd-item">
+      <!-- <kbd> est une balise HTML standard qui représente une      -->
+      <!-- "saisie clavier". Le navigateur lui applique par défaut    -->
+      <!-- une police monospace ; on renforce ensuite via CSS pour    -->
+      <!-- qu'elle ressemble à une vraie touche en relief.            -->
+      <kbd class="kbd">1</kbd>
+      <!-- Petit séparateur visuel entre 1 et 4 pour montrer qu'on    -->
+      <!-- parle d'une plage de touches (1, 2, 3 ou 4).               -->
+      <span class="kbd-sep">–</span>
+      <kbd class="kbd">4</kbd>
+      <span class="kbd-label">choisir une réponse</span>
+    </span>
+
+    <!-- Deuxième raccourci : Entrée pour valider ou avancer -->
+    <span class="kbd-item">
+      <kbd class="kbd">Entrée</kbd>
+      <span class="kbd-label">valider / question suivante</span>
+    </span>
+
+    <!-- Troisième raccourci : P pour passer la question -->
+    <span class="kbd-item">
+      <kbd class="kbd">P</kbd>
+      <span class="kbd-label">passer la question</span>
+    </span>
+
+  </aside>
 
 </div>

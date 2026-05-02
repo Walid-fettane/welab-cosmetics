@@ -15,6 +15,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  HostListener,
   inject,
   OnDestroy,
   OnInit,
@@ -42,10 +43,10 @@ export class Game implements OnInit, OnDestroy {
   // État local de la page (signals réactifs)
   // ------------------------------------------------------------------
 
-  /** Les questions du niveau actuel (ex: 3 questions faciles du mini-jeu 1). */
+  /** Les questions du niveau actuel (sous-ensemble des questions du mini-jeu pour la difficulté courante). */
   questions = signal<Question[]>([]);
 
-  /** Index de la question affichée (0 = 1ère question, 2 = 3ème). */
+  /** Index de la question affichée dans le tableau questions() (commence à 0). */
   questionIndex = signal(0);
 
   /** Réponse cliquée par le joueur (null = rien sélectionné). */
@@ -57,7 +58,7 @@ export class Game implements OnInit, OnDestroy {
    */
   reponseResult = signal<ReponseResult | null>(null);
 
-  /** Index du mini-jeu actuel dans le tableau gameState.miniJeux() (0, 1, 2). */
+  /** Index du mini-jeu actuel dans le tableau gameState.miniJeux() (commence à 0). */
   miniJeuIndex = signal(0);
 
   /** Niveau de difficulté actuel : 1 = Facile, 2 = Moyen, 3 = Difficile. */
@@ -82,15 +83,19 @@ export class Game implements OnInit, OnDestroy {
   tempsEcouleSecondes = signal(0);
 
   /**
-   * Nombre de questions auxquelles le joueur a déjà répondu (validées) depuis
-   * le début de la partie (toutes mini-jeux confondus).
+   * Nombre de questions pour lesquelles le joueur est passé à la suivante
+   * depuis le début de la partie (toutes mini-jeux confondus).
+   * Incrémenté au clic sur "Question suivante" (et non au clic sur "Valider"),
+   * afin que les compteurs ne sautent pas pendant l'affichage du résultat.
    * Sert au compteur global et au remplissage de la barre de progression.
    */
   questionsRepondues = signal(0);
 
   /**
-   * Nombre de questions auxquelles le joueur a déjà répondu dans le mini-jeu
-   * actuellement en cours. Réinitialisé à 0 au passage au mini-jeu suivant.
+   * Nombre de questions pour lesquelles le joueur est passé à la suivante
+   * dans le mini-jeu actuellement en cours. Réinitialisé à 0 au passage au
+   * mini-jeu suivant. Incrémenté au clic sur "Question suivante" (même règle
+   * de timing que le compteur global ci-dessus).
    * Sert à afficher le compteur local "Question X / total du mini-jeu".
    */
   questionsRepondueDansMiniJeuCourant = signal(0);
@@ -254,7 +259,7 @@ export class Game implements OnInit, OnDestroy {
   // ------------------------------------------------------------------
 
   /**
-   * Charge le groupe de 3 questions pour le mini-jeu et la difficulté actuels.
+   * Charge le groupe de questions du mini-jeu pour la difficulté actuelle.
    * Appelée au démarrage et chaque fois qu'on passe au niveau/mini-jeu suivant.
    */
   private chargerQuestions(): void {
@@ -318,15 +323,72 @@ export class Game implements OnInit, OnDestroy {
         this.reponseResult.set(result);
         // Met à jour le score affiché dans l'en-tête en temps réel
         this.gameState.score.set(result.score_total_partie);
-        // Une question vient d'être validée : on incrémente le compteur global
-        // (utilisé pour la barre de progression et le compteur "Total X / total partie")
-        this.questionsRepondues.update(n => n + 1);
-        // On incrémente aussi le compteur local du mini-jeu courant
-        // (utilisé pour le compteur "Question X / total du mini-jeu")
-        this.questionsRepondueDansMiniJeuCourant.update(n => n + 1);
+        // Les compteurs de progression ne sont PAS incrémentés ici :
+        // ils le seront uniquement quand le joueur cliquera sur
+        // "Question suivante", pour qu'ils ne sautent pas pendant
+        // qu'il regarde encore le résultat de la question validée.
       },
       error: () => {
         this.erreur.set('Erreur lors de la validation. Réessaie.');
+      },
+    });
+  }
+
+  // ------------------------------------------------------------------
+  // AMÉLIORATION (ajoutée après la version de base) : bouton "Passer"
+  //
+  // Permet au joueur de passer une question dont il ne connait pas la
+  // réponse, sans rester bloqué. La question est alors comptée comme
+  // incorrecte (0 point) et la bonne réponse est révélée pour qu'il
+  // puisse apprendre. Cette amélioration n'a pas demandé de modification
+  // du backend : on envoie simplement une valeur spéciale qui ne pourra
+  // jamais correspondre à une vraie bonne réponse (voir ci-dessous).
+  // ------------------------------------------------------------------
+
+  /**
+   * Passe la question actuelle sans avoir choisi de réponse.
+   * Enregistre une réponse incorrecte côté serveur et déclenche le même
+   * affichage que pour une mauvaise réponse (feedback rouge + bonne
+   * réponse révélée).
+   */
+  passer(): void {
+    const question = this.currentQuestion();
+    const partie   = this.gameState.partie();
+
+    // Sécurités : on ne passe que si une question est affichée, une partie
+    // est en cours et que la réponse n'a pas encore été validée.
+    // Contrairement à valider(), on n'exige PAS qu'un choix soit
+    // sélectionné : c'est justement le but de "Passer".
+    if (!question || !partie || this.reponseResult()) return;
+
+    // Calcul du temps passé sur la question (en secondes entières).
+    // Date.now() renvoie le nombre de millisecondes depuis 1970, on
+    // soustrait l'instant où la question a été affichée puis on divise
+    // par 1000 pour obtenir des secondes, et Math.round pour arrondir.
+    const tempsReponse = Math.round((Date.now() - this.questionStartTime) / 1000);
+
+    // On envoie la chaîne spéciale "__SKIPPED__" comme réponse donnée.
+    // Pourquoi cette valeur précise : aucune vraie bonne réponse en base
+    // ne porte ce libellé (c'est une chaîne avec des underscores et des
+    // majuscules très improbables dans une question de cosmétique).
+    // Donc le backend la comparera à la bonne réponse, ne trouvera pas
+    // de correspondance, et la marquera automatiquement comme incorrecte
+    // (estCorrecte = false, scoreObtenu = 0). Aucune modification du
+    // backend n'est nécessaire pour gérer le "skip".
+    this.api.submitReponse(partie.id, question.id, '__SKIPPED__', tempsReponse).subscribe({
+      next: (result) => {
+        // Affiche le résultat exactement comme pour valider() : le
+        // template HTML détectera reponseResult().correct === false et
+        // affichera le feedback rouge avec la bonne réponse révélée.
+        this.reponseResult.set(result);
+        // Met à jour le score affiché dans l'en-tête (il restera identique
+        // puisque la réponse est incorrecte, mais on reste cohérent).
+        this.gameState.score.set(result.score_total_partie);
+        // Pas d'incrémentation des compteurs de progression ici : elle
+        // se fera au clic sur "Question suivante", comme dans valider().
+      },
+      error: () => {
+        this.erreur.set('Erreur lors du passage de la question. Réessaie.');
       },
     });
   }
@@ -336,6 +398,17 @@ export class Game implements OnInit, OnDestroy {
    * ou navigue vers /result si toutes les questions sont terminées.
    */
   questionSuivante(): void {
+    // Le joueur passe à la suite (il a vu son résultat) : on incrémente
+    // les compteurs de progression maintenant, et non au moment de la
+    // validation. Les chiffres affichés pendant l'écran de résultat
+    // restent ceux de la question qui vient d'être validée et ne sautent
+    // qu'au moment du passage à la suivante.
+    // Placé tout en haut pour couvrir tous les cas (question suivante,
+    // niveau suivant, mini-jeu suivant, fin de partie) : ainsi le total
+    // final reste cohérent même avant la navigation vers /result.
+    this.questionsRepondues.update(n => n + 1);
+    this.questionsRepondueDansMiniJeuCourant.update(n => n + 1);
+
     const index      = this.questionIndex();
     const total      = this.questions().length;
     const diff       = this.difficulte();
@@ -366,6 +439,129 @@ export class Game implements OnInit, OnDestroy {
     } else {
       // Cas 4 : tout le jeu est terminé → aller afficher les résultats
       this.router.navigate(['/result']);
+    }
+  }
+
+  // ------------------------------------------------------------------
+  // AMÉLIORATION (ajoutée après la version de base) : raccourcis clavier
+  //
+  // Permet au joueur de jouer entièrement au clavier sans toucher la
+  // souris, ce qui rend le jeu plus rapide et plus accessible.
+  //
+  // Touches gérées :
+  //   - 1, 2, 3, 4 : sélectionnent respectivement le 1er, 2e, 3e ou 4e
+  //                  choix de réponse affiché
+  //   - Entrée    : valide la réponse sélectionnée, ou passe à la
+  //                 question suivante si le résultat est déjà affiché
+  //   - P         : passe la question (initiale de "Passer", même effet
+  //                 que le bouton Passer)
+  //
+  // Choix d'implémentation : @HostListener('window:keydown') au niveau
+  // de la fenêtre du navigateur, plutôt que sur un élément précis. On
+  // veut capter les touches même quand aucun bouton n'a le focus.
+  // Comme ce composant est créé/détruit avec la route /game, le listener
+  // est automatiquement inactif sur les autres pages (home, pseudo,
+  // result) : pas besoin de gestion manuelle d'activation/désactivation.
+  // ------------------------------------------------------------------
+
+  /**
+   * Méthode unique qui reçoit toutes les touches clavier et appelle
+   * la bonne action selon la touche pressée.
+   *
+   * @param event - Évènement clavier émis par le navigateur. Sa propriété
+   *                event.key contient le nom de la touche pressée sous
+   *                forme de chaîne ("1", "Enter", "s", "ArrowDown"...).
+   */
+  // @HostListener est un décorateur Angular : il attache automatiquement
+  // la méthode décorée à un évènement, sans avoir besoin d'écrire
+  // addEventListener à la main. Le premier argument 'window:keydown'
+  // précise la cible (l'objet window du navigateur) et le type
+  // d'évènement (keydown = quand une touche est enfoncée). Le second
+  // argument ['$event'] dit à Angular de passer l'objet évènement
+  // en paramètre de notre méthode.
+  @HostListener('window:keydown', ['$event'])
+  gererTouche(event: KeyboardEvent): void {
+    // Sécurité : si le joueur est en train de taper dans un champ texte
+    // (input ou textarea), on ignore les raccourcis pour ne pas perturber
+    // sa saisie. Peu probable sur la page game (pas de champ texte ici),
+    // mais c'est une bonne pratique générale.
+    // instanceof HTMLInputElement est un test JavaScript qui vérifie
+    // que l'élément ciblé par l'évènement est bien un <input> du HTML.
+    // Pareil avec HTMLTextAreaElement pour les <textarea>.
+    const cible = event.target;
+    if (cible instanceof HTMLInputElement || cible instanceof HTMLTextAreaElement) {
+      return;
+    }
+
+    // Sécurité : tant que les questions chargent ou qu'aucune question
+    // n'est affichée, les raccourcis n'ont rien à faire.
+    if (this.isLoading() || !this.currentQuestion()) {
+      return;
+    }
+
+    // event.key est la chaîne qui contient le nom de la touche pressée :
+    // "1", "2", "3", "4", "Enter", "s", "S", "Escape", "ArrowLeft", etc.
+    // On la stocke dans une variable pour éviter de la relire à chaque test.
+    const touche = event.key;
+
+    // ---- Cas 1 : touches 1 à 4 → sélectionner le choix correspondant ----
+    if (touche === '1' || touche === '2' || touche === '3' || touche === '4') {
+      // peutSelectionner() vaut false après validation : on bloque alors
+      // la sélection pour empêcher le joueur de changer d'avis.
+      if (!this.peutSelectionner()) return;
+
+      // parseInt(touche, 10) convertit la chaîne ("1", "2"...) en nombre
+      // entier. Le second argument 10 précise qu'on travaille en base 10
+      // (système décimal classique). Le " - 1" sert à passer d'un index
+      // 1-based (vu par le joueur : "1" = premier choix) à un index
+      // 0-based (utilisé par les tableaux JavaScript : 0 = premier élément).
+      const index = parseInt(touche, 10) - 1;
+
+      // On lit le choix à cet index. Si le tableau a moins de 4 éléments,
+      // choix vaudra undefined et on n'appelle pas selectionnerChoix
+      // (la touche est ignorée silencieusement).
+      const choix = this.currentQuestion().choix_possibles[index];
+      if (choix !== undefined) {
+        this.selectionnerChoix(choix);
+      }
+      return;
+    }
+
+    // ---- Cas 2 : touche Entrée → valider ou passer à la suivante ----
+    if (touche === 'Enter') {
+      // event.preventDefault() bloque le comportement par défaut du
+      // navigateur. Ici, sans cet appel, si un bouton avait gardé le
+      // focus (par exemple le dernier choix cliqué), Entrée déclencherait
+      // un clic sur ce bouton EN PLUS de notre action, créant un effet
+      // double. preventDefault empêche cet effet indésirable.
+      event.preventDefault();
+
+      if (this.reponseResult() === null) {
+        // Pas encore validé : on déclenche valider(), mais seulement si
+        // un choix a déjà été sélectionné (sinon valider() ne fait rien
+        // de toute façon, mais on évite un appel inutile).
+        if (this.selectedChoice() !== null) {
+          this.valider();
+        }
+      } else {
+        // Réponse déjà validée et résultat affiché : Entrée fait passer
+        // à la question suivante (équivalent du bouton "Question suivante").
+        this.questionSuivante();
+      }
+      return;
+    }
+
+    // ---- Cas 3 : touche P (majuscule ou minuscule) → passer la question ----
+    // P comme "Passer" : initiale du libellé du bouton, plus naturelle à
+    // mémoriser pour le joueur. On accepte les deux casses pour que le
+    // raccourci marche que CapsLock soit activé ou non.
+    if (touche === 'p' || touche === 'P') {
+      // On ne peut passer la question que tant qu'elle n'a pas été validée
+      // (sinon le bouton "Passer" n'est plus visible non plus).
+      if (this.reponseResult() === null) {
+        this.passer();
+      }
+      return;
     }
   }
 }

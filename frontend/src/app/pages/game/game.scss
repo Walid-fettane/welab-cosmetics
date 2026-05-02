@@ -243,6 +243,14 @@ $color-card:       rgba(255, 255, 255, 0.08);
   text-align: left;
   line-height: 1.4;
   transition: background 0.15s, border-color 0.15s, transform 0.1s;
+  // AMÉLIORATION (ajoutée après la version de base) : on passe le
+  // bouton en flexbox horizontal pour aligner proprement le badge
+  // numéro (1, 2, 3, 4) à gauche du texte du choix.
+  // align-items: center centre verticalement le badge sur la même
+  // ligne que la première ligne du texte, même si le texte du choix
+  // est long et passe sur deux lignes.
+  display: flex;
+  align-items: center;
 
   &:hover:not(:disabled) {
     background: rgba(255, 255, 255, 0.18);
@@ -291,6 +299,52 @@ $color-card:       rgba(255, 255, 255, 0.08);
       opacity: 0.5;
     }
   }
+}
+
+// ----------------------------------------------------------------
+// AMÉLIORATION (ajoutée après la version de base) : badge numéro
+// affiché à gauche de chaque choix de réponse (1, 2, 3 ou 4).
+//
+// Sert de repère visuel pour le joueur qui joue au clavier : il
+// voit immédiatement quelle touche presser pour sélectionner un
+// choix donné. Le style imite une petite touche pour renforcer le
+// lien visuel avec le clavier physique.
+// ----------------------------------------------------------------
+.choice-number {
+  // Carré légèrement arrondi (pas un rond parfait) pour rappeler la
+  // forme d'une touche de clavier d'ordinateur.
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 0.4rem;
+
+  // Fond et bordure translucides pour rester discret par rapport
+  // au texte du choix qui doit garder le focus principal.
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+
+  // Police monospace : caractéristique d'un affichage "informatique"
+  // ou "clavier", aide à identifier l'élément comme une touche.
+  // ui-monospace est la police monospace native du système (San
+  // Francisco Mono sur Mac, Segoe UI Mono sur Windows...) ; on
+  // retombe sur "monospace" générique si elle n'existe pas.
+  font-family: ui-monospace, monospace;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+
+  // flex: 0 0 auto = "ne grandis pas, ne rétrécis pas, garde ta
+  // taille naturelle". Empêche le badge d'être écrasé si le texte
+  // du choix à sa droite est très long.
+  flex: 0 0 auto;
+  // Espace entre le badge et le texte du choix qui le suit.
+  margin-right: 0.7rem;
+
+  // display: inline-flex permet de centrer le numéro à l'intérieur
+  // du badge, à la fois horizontalement (justify-content: center)
+  // et verticalement (align-items: center).
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 // ---- Zone de résultat (correct ou faux) ----
@@ -411,6 +465,135 @@ $color-card:       rgba(255, 255, 255, 0.08);
   }
 }
 
+// ----------------------------------------------------------------
+// AMÉLIORATION (ajoutée après la version de base) : bouton "Passer"
+//
+// Bouton secondaire à côté de "Valider" qui permet au joueur de
+// passer une question. Style gris/neutre pour le distinguer du
+// bouton principal "Valider" (rose) : on veut que le joueur
+// comprenne au premier coup d'oeil que c'est l'action "de secours"
+// et non l'action principale.
+//
+// Choix de largeur : flex: 0 0 auto au lieu de flex: 1 utilisé par
+// les autres boutons d'action. Cela empêche "Passer" de prendre la
+// même place que "Valider" et reste discret sans dominer l'écran.
+// ----------------------------------------------------------------
+.btn-skip {
+  // Fond gris translucide (pas de couleur d'action) pour un aspect neutre
+  background: rgba(255, 255, 255, 0.08);
+  // Texte blanc atténué (75% d'opacité) pour rester lisible sans crier
+  color: rgba(255, 255, 255, 0.75);
+  // Bordure grise très discrète, plus fine visuellement que celle de Valider
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  // Mêmes coins arrondis et hauteur que les autres boutons pour rester cohérent
+  border-radius: 50px;
+  padding: 0.875rem 1.5rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+  // flex: 0 0 auto = "ne grandis pas, ne rétrécis pas, garde ta largeur naturelle"
+  // (les trois valeurs correspondent à flex-grow, flex-shrink, flex-basis).
+  // Cela évite que ce bouton prenne autant de place que "Valider" (flex: 1).
+  flex: 0 0 auto;
+  transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.1s;
+
+  // Survol : on accentue légèrement le fond et la bordure pour signaler
+  // que le bouton est cliquable (sauf s'il est désactivé pendant un chargement).
+  &:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.4);
+    color: $color-white;
+  }
+
+  // Effet de pression : petit "shrink" pour le retour visuel au clic
+  &:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  // Contour de focus visible au clavier (accessibilité)
+  &:focus-visible {
+    outline: 3px solid $color-white;
+    outline-offset: 3px;
+  }
+
+  // Désactivé pendant le chargement : on grise et on bloque le curseur
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+// ----------------------------------------------------------------
+// AMÉLIORATION (ajoutée après la version de base) : barre d'aide
+// clavier en bas de la page de jeu.
+//
+// Liste les raccourcis disponibles (1-4, Entrée, P) sous forme de
+// petites "touches" stylisées pour que le joueur sache dès l'arrivée
+// sur la page qu'il peut jouer entièrement au clavier.
+//
+// Style volontairement discret pour ne pas voler la vedette à la
+// question : fond très légèrement assombri, texte petit et atténué.
+// ----------------------------------------------------------------
+.keyboard-help {
+  // Disposition horizontale des raccourcis. flex-wrap: wrap permet
+  // aux items de passer à la ligne automatiquement si la fenêtre
+  // est trop étroite (au lieu de déborder hors de l'écran).
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+
+  padding: 0.75rem 1.5rem;
+  // Fond sombre translucide cohérent avec l'en-tête et le bandeau
+  // de progression : la barre d'aide se fond visuellement avec eux.
+  background: rgba(0, 0, 0, 0.18);
+  // Liseré supérieur fin pour bien séparer la barre de la zone de jeu
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.8rem;
+  // Texte blanc atténué pour rester lisible sans être agressif.
+  color: rgba(255, 255, 255, 0.7);
+}
+
+// Un raccourci individuel : une ou deux touches + un libellé.
+// inline-flex aligne tous les enfants sur une même ligne.
+.kbd-item {
+  display: inline-flex;
+  align-items: center;
+  // gap remplace les marges entre les éléments enfants : on a un
+  // espacement uniforme entre touche, séparateur et libellé.
+  gap: 0.4rem;
+}
+
+// Style de la balise <kbd> : on imite une vraie touche physique.
+// La balise <kbd> existe en HTML standard pour représenter une
+// saisie clavier ; on la stylise ici pour qu'elle ressemble plus
+// concrètement à une touche.
+.kbd {
+  font-family: ui-monospace, monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  // padding compact : 0.15rem en haut/bas et 0.5rem à gauche/droite
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.35rem;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: rgba(255, 255, 255, 0.9);
+  // box-shadow vers le bas pour donner l'illusion d'une touche en
+  // léger relief, comme si elle dépassait de la barre.
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
+}
+
+// Petit séparateur "–" entre la touche 1 et la touche 4 dans le
+// premier raccourci (1 – 4). Couleur encore plus atténuée pour
+// rester en arrière-plan visuel.
+.kbd-sep {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+// La classe .kbd-label sur le libellé qui décrit l'action n'a pas
+// de règle CSS : la couleur et la taille sont déjà héritées du
+// parent .keyboard-help, donc rien à styliser ici.
+
 // ---- Adaptation mobile (une seule colonne pour les choix) ----
 @media (max-width: 520px) {
   .choices-grid {
@@ -423,5 +606,15 @@ $color-card:       rgba(255, 255, 255, 0.08);
 
   .question-enonce {
     font-size: 1rem;
+  }
+
+  // AMÉLIORATION : sur mobile, on empile verticalement les
+  // raccourcis pour qu'ils restent lisibles sans être à l'étroit
+  // sur les petits écrans.
+  .keyboard-help {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
   }
 }
