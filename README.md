@@ -14,7 +14,7 @@ Un jeu web educatif de 45 minutes comprenant 3 mini-jeux :
 | Composant | Technologie | Port |
 |-----------|-------------|------|
 | Backend API | Symfony 7 | 8000 |
-| Frontend | Angular 18 | 4200 |
+| Frontend | Angular 19 | 4200 |
 | Base de donnees | PostgreSQL 16 | 5432 |
 | Admin BDD | Adminer | 8080 |
 
@@ -30,50 +30,74 @@ Un jeu web educatif de 45 minutes comprenant 3 mini-jeux :
 
 ### Prerequis
 
-- Docker & Docker Compose installes
+- Docker et Docker Compose installes
 - Git
+- OpenSSL (deja present sur la majorite des distributions Linux et macOS)
 
-### 1. Cloner le projet
+### Procedure (3 commandes)
 
 ```bash
 git clone <url-du-repo>
 cd welab-cosmetics
+./start.sh
 ```
 
-### 2. Configurer l'environnement
+Le script `start.sh` s'occupe automatiquement de :
 
-```bash
-# Creer le fichier .env avec votre UID/GID
-make env-setup
+- Creer les fichiers de configuration (`.env` racine et `backend/.env`)
+- Generer des secrets aleatoires (APP_SECRET et JWT_PASSPHRASE)
+- Lancer les containers Docker (PHP, Node, PostgreSQL, Adminer)
+- Generer les cles RSA pour les JWT
+- Installer les dependances Composer et npm
+- Executer les migrations Doctrine
+- Charger les fixtures (35 questions du jeu + compte administrateur)
 
-# OU manuellement :
-cp .env.example .env
-# Modifier USERID et GROUPID avec vos valeurs (id -u et id -g)
-```
+Le script est idempotent : on peut le relancer sans casser une installation
+existante. Une fois termine, accedez aux URLs affichees dans le recapitulatif.
 
-### 3. Demarrer les containers
+### URLs d'acces
 
-```bash
-make start
-```
+| Service | URL |
+|---------|-----|
+| Jeu (page d'accueil) | http://localhost:4200 |
+| Connexion administrateur | http://localhost:4200/admin/login |
+| Tableau de bord administrateur | http://localhost:4200/admin/dashboard |
+| API backend Symfony | http://localhost:8000 |
+| Adminer (gestion BDD) | http://localhost:8080 |
 
-### 4. Creer les projets (premiere fois uniquement)
+### Identifiants par defaut
 
-```bash
-# Creer le projet Symfony
-make init-symfony
+| Role | Identifiant | Mot de passe |
+|------|-------------|--------------|
+| Administrateur du jeu | admin@welab.fr | admin1234 |
+| Adminer | welab | welab123 |
 
-# Creer le projet Angular
-make init-angular
-```
+Le compte administrateur est cree automatiquement par les fixtures
+(`make fixtures` ou directement par `start.sh` au premier lancement).
 
-### 5. Acceder aux applications
+### Securite
 
-| Application | URL |
-|-------------|-----|
-| **Symfony API** | http://localhost:8000 |
-| **Angular** | http://localhost:4200 |
-| **Adminer** | http://localhost:8080 |
+- Aucun secret n'est stocke dans le depot Git
+- Les fichiers `.env` (racine et `backend/`) sont ignores par `.gitignore`
+- Les cles JWT (`backend/config/jwt/*.pem`) sont generees localement et
+  ignorees par `.gitignore`
+- Le script `start.sh` genere des secrets aleatoires (APP_SECRET sur
+  32 caracteres, JWT_PASSPHRASE sur 64 caracteres) a chaque premiere
+  installation
+
+### Fonctionnalites principales
+
+- **Jeu pedagogique** : 3 mini-jeux avec 35 questions au total
+- **Difficulte progressive** : 5 questions faciles (1 point), 5 moyennes
+  (2 points), 5 difficiles (3 points) par mini-jeu
+- **Aides au joueur** : raccourcis clavier (touches 1 a 4 pour selectionner
+  un choix, Entree pour valider, P pour passer), bouton Passer dedie,
+  badges numerotes sur les choix, barre d'aide clavier en bas d'ecran
+- **Double compteur de progression** : avancement dans le mini-jeu en cours
+  et avancement global de la partie affiches en parallele
+- **Espace administrateur** : authentification par JWT, CRUD complet sur
+  les questions du jeu (ajout, modification, suppression), liste filtrable
+  par mini-jeu et difficulte
 
 ---
 
@@ -152,12 +176,13 @@ DATABASE_URL="postgresql://welab:welab123@postgres:5432/welab_db?serverVersion=1
 
 | Table | Description |
 |-------|-------------|
-| `joueur` | Utilisateurs du jeu (pseudo) |
+| `joueur` | Joueurs du jeu (pseudo) |
 | `partie` | Sessions de jeu |
 | `mini_jeu` | Types de jeux (3 types) |
-| `question` | Questions avec difficulte |
+| `question` | Questions avec difficulte et choix possibles |
 | `reponse` | Reponses donnees par les joueurs |
 | `utilise` | Association partie <-> mini_jeu |
+| `utilisateur` | Comptes administrateurs (email + mot de passe hashe) |
 
 ---
 
@@ -250,21 +275,53 @@ welab-cosmetics/
 │       └── init.sql            # Script init BDD
 ├── backend/                    # Projet Symfony
 │   ├── src/
-│   │   ├── Entity/             # Entites Doctrine
-│   │   ├── Controller/         # Controleurs API
-│   │   ├── Repository/         # Repositories
-│   │   └── DataFixtures/       # Fixtures
-│   └── ...
+│   │   ├── Entity/             # 6 entites Doctrine
+│   │   │   ├── Joueur.php
+│   │   │   ├── Partie.php
+│   │   │   ├── MiniJeu.php
+│   │   │   ├── Question.php
+│   │   │   ├── Reponse.php
+│   │   │   └── Utilisateur.php (compte admin)
+│   │   ├── Controller/Api/     # Controleurs API publics
+│   │   │   ├── JoueurController.php
+│   │   │   ├── PartieController.php
+│   │   │   ├── MiniJeuController.php
+│   │   │   └── Admin/          # Controleurs admin proteges par JWT
+│   │   │       ├── MeController.php
+│   │   │       └── QuestionAdminController.php
+│   │   ├── Repository/         # Repositories Doctrine
+│   │   ├── DataFixtures/       # Fixtures (35 questions + admin)
+│   │   └── Security/           # Configuration JWT
+│   ├── config/jwt/             # Cles RSA (generees localement, ignorees Git)
+│   ├── .env.example            # Modele de configuration
+│   └── .env                    # Configuration reelle (ignoree par Git)
 ├── frontend/                   # Projet Angular
 │   ├── src/
 │   │   ├── app/
-│   │   │   ├── components/     # Composants
+│   │   │   ├── pages/          # Pages de l'application
+│   │   │   │   ├── home/
+│   │   │   │   ├── pseudo/
+│   │   │   │   ├── game/
+│   │   │   │   ├── result/
+│   │   │   │   ├── admin-login/      # Connexion admin
+│   │   │   │   └── admin-dashboard/  # CRUD questions
 │   │   │   ├── services/       # Services HTTP
+│   │   │   │   ├── api.ts            # API publique du jeu
+│   │   │   │   ├── api-admin.ts      # API admin (CRUD)
+│   │   │   │   ├── auth.ts           # Gestion du jeton JWT
+│   │   │   │   └── game-state.ts
+│   │   │   ├── interceptors/   # Intercepteurs HTTP
+│   │   │   │   └── auth-interceptor.ts (ajoute Authorization sur /api/admin/*)
+│   │   │   ├── guards/         # Guards de route
+│   │   │   │   └── auth-guard.ts (protege /admin/dashboard)
 │   │   │   └── models/         # Interfaces TypeScript
+│   │   │       ├── interfaces.ts
+│   │   │       └── admin-interfaces.ts
 │   │   └── ...
 │   └── ...
 ├── docker-compose.yml
 ├── Makefile
+├── start.sh                    # Script d'installation automatisee
 ├── .env.example
 └── README.md
 ```

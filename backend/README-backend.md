@@ -6,29 +6,34 @@ API REST pour le jeu pedagogique interactif We-Lab Cosmetics.
 
 ```
 backend/src/
-├── Entity/              # Les 5 entites (= tables en BDD)
-│   ├── Joueur.php       # Un utilisateur du jeu (pseudo unique)
-│   ├── Partie.php       # Une session de jeu (score, dates, joueur)
-│   ├── MiniJeu.php      # Un type de jeu (3 types definis)
-│   ├── Question.php     # Une question avec difficulte et choix
-│   └── Reponse.php      # La reponse d'un joueur a une question
-├── Repository/          # Les requetes de lecture (SELECT)
+├── Entity/                  # Les 6 entites (= tables en BDD)
+│   ├── Joueur.php           # Un joueur du jeu (pseudo unique)
+│   ├── Partie.php           # Une session de jeu (score, dates, joueur)
+│   ├── MiniJeu.php          # Un type de jeu (3 types definis)
+│   ├── Question.php         # Une question avec difficulte et choix
+│   ├── Reponse.php          # La reponse d'un joueur a une question
+│   └── Utilisateur.php      # Un administrateur (email + mot de passe)
+├── Repository/              # Les requetes de lecture (SELECT)
 │   ├── JoueurRepository.php
 │   ├── PartieRepository.php
 │   ├── MiniJeuRepository.php
 │   ├── QuestionRepository.php
-│   └── ReponseRepository.php
-├── Controller/Api/      # Les endpoints de l'API REST
-│   ├── JoueurController.php
-│   ├── PartieController.php
-│   └── MiniJeuController.php
-└── DataFixtures/        # Donnees de test (35 questions cosmetiques)
+│   ├── ReponseRepository.php
+│   └── UtilisateurRepository.php
+├── Controller/Api/          # Les endpoints de l'API REST
+│   ├── JoueurController.php       # Routes publiques /api/joueurs
+│   ├── PartieController.php       # Routes publiques /api/parties
+│   ├── MiniJeuController.php      # Route publique /api/mini-jeux
+│   └── Admin/                     # Routes /api/admin (protegees par JWT)
+│       ├── MeController.php       # GET /api/admin/me
+│       └── QuestionAdminController.php  # CRUD /api/admin/questions
+└── DataFixtures/            # Donnees de test (35 questions + 1 admin)
     └── AppFixtures.php
 ```
 
 ## Base de donnees
 
-PostgreSQL 16 avec 5 tables + 1 table associative :
+PostgreSQL 16 avec 6 tables + 1 table associative :
 
 ```
 joueur (id, pseudo)
@@ -46,6 +51,8 @@ reponse                 |
    | 1 question         |
    v                    | 1 mini-jeu -> N questions
 question (id, enonce, element_a_deviner, difficulte, choix_possibles, mini_jeu_id)
+
+utilisateur (id, email UNIQUE, password, roles JSON)  <- compte administrateur
 ```
 
 ### Les 3 types de mini-jeux
@@ -85,6 +92,80 @@ Le score obtenu = le niveau de difficulte si la reponse est correcte, 0 sinon.
 | Methode | URL | Description |
 |---------|-----|-------------|
 | GET | /api/mini-jeux | Liste des 3 mini-jeux |
+
+### Espace administrateur (routes protegees par JWT)
+
+Toutes les routes ci-dessous (sauf le login) exigent un en-tete
+`Authorization: Bearer <jeton>` valide. Le firewall Symfony rejette
+les requetes sans jeton avec un code 401.
+
+| Methode | URL | Description | Body |
+|---------|-----|-------------|------|
+| POST | /api/admin/login | Authentifier un admin (route publique) | `{"email": "admin@welab.fr", "password": "admin1234"}` |
+| GET | /api/admin/me | Profil de l'admin connecte | - |
+| GET | /api/admin/mini-jeux | Liste des mini-jeux (pour les selects) | - |
+| GET | /api/admin/questions | Liste de toutes les questions | - |
+| POST | /api/admin/questions | Creer une nouvelle question | voir ci-dessous |
+| PUT | /api/admin/questions/{id} | Modifier une question existante | voir ci-dessous |
+| DELETE | /api/admin/questions/{id} | Supprimer une question | - |
+
+Format du body pour creer ou modifier une question :
+
+```json
+{
+  "enonce": "Quel produit contient du Fluor ?",
+  "elementADeviner": "Dentifrice",
+  "difficulte": 1,
+  "miniJeuId": 1,
+  "choixPossibles": ["Dentifrice", "Shampoing", "Creme", "Parfum"]
+}
+```
+
+La bonne reponse (`elementADeviner`) doit imperativement faire partie
+des `choixPossibles`. Le backend rejette la requete avec un 400 sinon.
+
+## Authentification JWT
+
+Le backend utilise le bundle **LexikJWTAuthenticationBundle** pour
+proteger les routes administrateur.
+
+### Comment ca marche
+
+1. **Generation des cles** : la commande `lexik:jwt:generate-keypair`
+   genere une paire de cles RSA (`config/jwt/private.pem` et
+   `config/jwt/public.pem`). La cle privee est chiffree par
+   `JWT_PASSPHRASE`. Le script `start.sh` execute cette commande
+   automatiquement au premier lancement.
+
+2. **Connexion** : l'admin envoie son email et son mot de passe sur
+   `POST /api/admin/login`. Le firewall Symfony delegue a Lexik qui :
+   - verifie le mot de passe (compare le hash bcrypt en BDD),
+   - genere un jeton JWT signe par la cle privee,
+   - retourne `{ "token": "eyJ0eXAi..." }`.
+
+3. **Requetes protegees** : pour chaque requete vers `/api/admin/*`,
+   le client envoie l'en-tete `Authorization: Bearer <jeton>`. Le
+   firewall verifie la signature avec la cle publique et autorise ou
+   refuse la requete.
+
+### Configuration cle (config/packages/security.yaml)
+
+- Firewall `api_admin_login` (anonyme, accepte le POST de login)
+- Firewall `api_admin` (verifie le JWT sur `/api/admin/*` sauf login)
+- Encodeur de mots de passe : bcrypt
+- Provider d'utilisateurs : `App\Entity\Utilisateur` avec champ `email`
+
+### Compte administrateur cree par les fixtures
+
+| Champ | Valeur |
+|-------|--------|
+| Email | `admin@welab.fr` |
+| Mot de passe | `admin1234` |
+| Roles | `["ROLE_ADMIN"]` |
+
+Ce compte est insere par `App\DataFixtures\AppFixtures` lors du
+chargement des fixtures (`make fixtures` ou `start.sh`). Le mot de
+passe est hashe en bcrypt avant insertion.
 
 ## Flux du jeu (comment le frontend utilise l'API)
 
@@ -139,3 +220,6 @@ curl -X POST http://localhost:8000/api/joueurs -H "Content-Type: application/jso
 - **Doctrine ORM** : Mapping objet-relationnel (classes PHP <-> tables SQL)
 - **PostgreSQL 16** : Base de donnees relationnelle
 - **PHP 8.3** : Langage backend
+- **LexikJWTAuthenticationBundle** : Generation et verification des
+  jetons JWT pour proteger les routes administrateur (cles RSA chiffrees
+  par une passphrase generee aleatoirement par `start.sh`)

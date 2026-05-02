@@ -154,6 +154,30 @@ Pour chaque mini-jeu, les questions suivent une difficulte progressive :
 
 Le score est affiche en haut de l'ecran et se met a jour en temps reel.
 
+### Aides au joueur
+
+Pour fluidifier le rythme de jeu, l'ecran de jeu propose plusieurs
+aides ergonomiques :
+
+- **Raccourcis clavier** : les touches `1`, `2`, `3` et `4`
+  selectionnent respectivement le 1er, 2eme, 3eme ou 4eme choix
+  affiche. La touche `Entree` valide le choix selectionne. La touche
+  `P` permet de passer la question en cours sans repondre.
+- **Bouton Passer** : pour les joueurs qui prefereraient utiliser la
+  souris, un bouton "Passer" est aussi affiche a cote du bouton
+  "Valider".
+- **Badges numerotes** : chaque choix porte un badge avec son numero
+  (1, 2, 3, 4) qui rappelle visuellement le raccourci clavier
+  associe.
+- **Barre d'aide clavier** : une barre discrete en bas d'ecran
+  rappelle en permanence les raccourcis disponibles, pour que le
+  joueur n'ait pas besoin de memoriser.
+- **Double compteur de progression** : deux indicateurs sont affiches
+  en parallele : le premier montre l'avancement dans le mini-jeu en
+  cours (par exemple "Question 3 / 5"), le second montre l'avancement
+  global de la partie (par exemple "8 / 15"). Cela donne au joueur
+  une vision precise de son rythme.
+
 ### Ecran 4 : Resultats
 
 Quand toutes les questions sont terminees, l'application envoie une demande

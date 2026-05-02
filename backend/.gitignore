@@ -22,3 +22,14 @@
 ###> lexik/jwt-authentication-bundle ###
 /config/jwt/*.pem
 ###< lexik/jwt-authentication-bundle ###
+
+# =============================================================================
+# Securite : secrets locaux
+# =============================================================================
+# On ignore le fichier .env reel car il contient des secrets generes
+# aleatoirement par start.sh : APP_SECRET (cle de chiffrement Symfony)
+# et JWT_PASSPHRASE (cle qui chiffre la cle privee JWT). Le modele
+# .env.example reste commit ; le vrai .env est genere a chaque install.
+###> securite - secrets locaux ###
+/.env
+###< securite - secrets locaux ###
