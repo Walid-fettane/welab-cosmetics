@@ -50,6 +50,11 @@ export interface ReponseResult {
 export interface PartieResult {
   id: number;             // Identifiant de la partie
   score_total: number;    // Score final du joueur sur toute la partie
+  // Score maximum que le joueur aurait pu obtenir sur cette partie.
+  // Calcule cote backend en sommant la difficulte de chaque question reellement posee.
+  // Sert au frontend pour afficher un pourcentage juste meme si le nombre
+  // de questions change (ajout/suppression par l'administrateur).
+  score_max_partie: number;
   nb_reponse: number;     // Nombre total de reponses soumises
   date_debut: string;     // Date/heure de debut (format ISO 8601)
   date_fin: string;       // Date/heure de fin (format ISO 8601)

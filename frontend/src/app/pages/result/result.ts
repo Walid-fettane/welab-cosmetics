@@ -17,8 +17,18 @@ import { Router } from '@angular/router';
 import { Api } from '../../services/api';
 import { GameState } from '../../services/game-state';
 
-// Score maximum possible : 3 mini-jeux × (5×1 + 5×2 + 5×3) = 3 × 30 = 90 points
-const SCORE_MAX = 90;
+// ------------------------------------------------------------------
+// AMÉLIORATION (ajoutée après la version de base) : score max dynamique.
+//
+// Auparavant, ce fichier déclarait une constante SCORE_MAX = 90 qui
+// supposait 3 mini-jeux × (5×1 + 5×2 + 5×3) = 90 points. Cette valeur
+// devenait fausse dès que l'administrateur ajoutait ou supprimait une
+// question via l'interface CRUD. Désormais, le backend calcule lui-même
+// le score maximum atteignable pour CHAQUE partie (en additionnant la
+// difficulté des questions réellement posées) et l'envoie dans la
+// réponse de fin de partie. Le frontend se contente de l'afficher, ce
+// qui garantit un pourcentage juste en toutes circonstances.
+// ------------------------------------------------------------------
 
 @Component({
   selector: 'app-result',
@@ -51,11 +61,28 @@ export class Result implements OnInit {
   /** Score final récupéré depuis le service partagé (mis à jour par terminerPartie). */
   scoreFinal = computed(() => this.gameState.scoreFinal());
 
-  /** Pourcentage du score obtenu sur le score maximum (0–100). */
-  pourcentage = computed(() => Math.round((this.scoreFinal() / SCORE_MAX) * 100));
+  /**
+   * Score maximum atteignable pour cette partie, lu depuis le service partagé.
+   * Cette valeur est renvoyée par le backend dans la réponse de terminerPartie
+   * (champ score_max_partie). Elle dépend des questions réellement posées :
+   * elle s'adapte automatiquement quand l'administrateur ajoute ou supprime
+   * une question dans l'interface d'administration.
+   */
+  scoreMax = computed(() => this.gameState.scoreMaxFinal());
 
-  /** Score maximum atteignable (constant : 90). */
-  scoreMax = SCORE_MAX;
+  /**
+   * Pourcentage du score obtenu sur le score maximum (entier de 0 à 100).
+   * Math.round() arrondit à l'entier le plus proche : par exemple 67.5 -> 68.
+   * On protège la division contre le cas (rare) où scoreMax vaudrait 0,
+   * ce qui produirait une valeur invalide (NaN) à l'affichage.
+   */
+  pourcentage = computed(() => {
+    const max = this.scoreMax();
+    if (max === 0) {
+      return 0;
+    }
+    return Math.round((this.scoreFinal() / max) * 100);
+  });
 
   /**
    * Message de félicitation adapté au score obtenu.
@@ -100,12 +127,17 @@ export class Result implements OnInit {
       next: (partieResult) => {
         // On stocke le score final dans le service partagé pour le rendre accessible
         this.gameState.scoreFinal.set(partieResult.score_total);
+        // On stocke aussi le score maximum atteignable, calculé par le backend.
+        // C'est cette valeur qui sert de dénominateur dans le calcul du pourcentage.
+        this.gameState.scoreMaxFinal.set(partieResult.score_max_partie);
         this.nbReponses.set(partieResult.nb_reponse);
         this.isLoading.set(false);
       },
       error: () => {
         // En cas d'erreur API, on utilise le score déjà mémorisé en temps réel
-        // (moins précis mais permet quand même d'afficher quelque chose)
+        // (moins précis mais permet quand même d'afficher quelque chose).
+        // On laisse scoreMaxFinal à 0 : le pourcentage affichera 0 % et le
+        // joueur verra le message d'avertissement ci-dessous.
         this.gameState.scoreFinal.set(this.gameState.score());
         this.erreur.set('La connexion au serveur a été perdue, le score peut être approximatif.');
         this.isLoading.set(false);

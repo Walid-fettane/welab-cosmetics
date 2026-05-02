@@ -52,6 +52,15 @@ export class GameState {
   /** Score final enregistré lors de la fin de partie (pour la page résultats). */
   scoreFinal = signal<number>(0);
 
+  // AMÉLIORATION (ajoutée après la version de base) : score max dynamique.
+  // Avant, le frontend supposait toujours 90 points maximum (3 mini-jeux × 30).
+  // Désormais, le backend renvoie le vrai score maximum atteignable pour la
+  // partie (calculé sur les questions réellement posées). On le stocke ici
+  // pour que la page résultats puisse calculer le pourcentage correctement,
+  // même si l'administrateur ajoute ou supprime des questions plus tard.
+  /** Score maximum atteignable pour la partie (renvoyé par le backend). */
+  scoreMaxFinal = signal<number>(0);
+
   /** Nombre total de réponses soumises dans la partie. */
   nbReponses = signal<number>(0);
 
@@ -70,6 +79,7 @@ export class GameState {
     this.miniJeux.set([]);
     this.score.set(0);
     this.scoreFinal.set(0);
+    this.scoreMaxFinal.set(0);
     this.nbReponses.set(0);
   }
 }

@@ -35,13 +35,13 @@
       <div class="result-score-block" aria-label="Score final">
 
         <span class="result-score-value">{{ scoreFinal() }}</span>
-        <span class="result-score-max">/ {{ scoreMax }}</span>
+        <span class="result-score-max">/ {{ scoreMax() }}</span>
 
         <!-- Barre de progression visuelle du score -->
         <div class="result-progress-bar" role="progressbar"
           [attr.aria-valuenow]="scoreFinal()"
           [attr.aria-valuemin]="0"
-          [attr.aria-valuemax]="scoreMax"
+          [attr.aria-valuemax]="scoreMax()"
           aria-label="Progression du score"
         >
           <div
@@ -80,7 +80,7 @@
 
       <!-- Avertissement si erreur API (score approximatif) -->
       @if (erreur()) {
-        <p class="result-warning" role="alert">⚠️ {{ erreur() }}</p>
+        <p class="result-warning" role="alert"> {{ erreur() }}</p>
       }
 
       <!-- -------------------------------------------------------- -->
@@ -91,7 +91,7 @@
         class="btn-primary"
         (click)="rejouer()"
       >
-        🔄 Rejouer
+        Rejouer
       </button>
 
     }

@@ -157,9 +157,23 @@ final class PartieController extends AbstractController
         $partie->recalculerScore();
         $this->em->flush();
 
+        // Calcul du score maximum atteignable pour cette partie precise.
+        // On centralise cette logique cote backend pour que le frontend reste passif :
+        // si l'administrateur ajoute ou supprime des questions plus tard,
+        // le pourcentage final affiche au joueur reste juste, sans modifier le code Angular.
+        $scoreMax = 0;
+        // On parcourt toutes les reponses enregistrees pour cette partie
+        // et on additionne la difficulte (1, 2 ou 3) de la question associee.
+        // Cela donne le score maximum que le joueur aurait pu obtenir
+        // s'il avait repondu correctement a toutes les questions qu'on lui a posees.
+        foreach ($partie->getReponses() as $reponse) {
+            $scoreMax += $reponse->getQuestion()->getDifficulte();
+        }
+
         return $this->json([
             'id' => $partie->getId(),
             'score_total' => $partie->getScoreTotal(),
+            'score_max_partie' => $scoreMax,
             'nb_reponse' => $partie->getNbReponse(),
             'date_debut' => $partie->getDateHeureDebut()->format('Y-m-d H:i:s'),
             'date_fin' => $partie->getDateHeureFin()->format('Y-m-d H:i:s'),
