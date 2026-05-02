@@ -1,0 +1,78 @@
+<!-- Page de connexion de l'espace administrateur. -->
+<!-- Affiche un formulaire email + mot de passe centre dans une carte glass. -->
+<!-- Reprend visuellement le meme style que la page de saisie du pseudo. -->
+
+<main class="admin-login-page">
+
+  <div class="admin-login-card">
+
+    <!-- Titre principal de la carte -->
+    <h1 class="admin-login-title">Espace administrateur</h1>
+    <p class="admin-login-subtitle">Connectez-vous pour gerer les questions du jeu.</p>
+
+    <!-- (ngSubmit) : evenement Angular declenche quand l'utilisateur -->
+    <!-- soumet le formulaire (touche Entree dans un champ ou clic sur -->
+    <!-- un bouton type="submit"). Plus fiable que (click) sur le bouton -->
+    <!-- car il fonctionne aussi avec la touche Entree. -->
+    <form class="admin-login-form" (ngSubmit)="connecter()">
+
+      <!-- Champ email -->
+      <div class="form-group">
+        <label for="admin-email" class="form-label">Email</label>
+        <!-- [ngModel]="email()" + (ngModelChange)="email.set($event)" : -->
+        <!-- equivalent au two-way binding [(ngModel)] mais ecrit en deux -->
+        <!-- temps. C'est necessaire avec les signals car la syntaxe -->
+        <!-- raccourcie [(ngModel)]="email()" essaierait d'affecter dans -->
+        <!-- l'appel de fonction "email()" (impossible). -->
+        <!-- L'attribut "name" est obligatoire pour que ngModel fonctionne -->
+        <!-- a l'interieur d'un <form>. -->
+        <input
+          id="admin-email"
+          type="email"
+          class="form-input"
+          placeholder="admin@welab.fr"
+          [ngModel]="email()"
+          (ngModelChange)="email.set($event)"
+          name="email"
+          autocomplete="email"
+          required
+        />
+      </div>
+
+      <!-- Champ mot de passe -->
+      <div class="form-group">
+        <label for="admin-password" class="form-label">Mot de passe</label>
+        <input
+          id="admin-password"
+          type="password"
+          class="form-input"
+          [ngModel]="password()"
+          (ngModelChange)="password.set($event)"
+          name="password"
+          autocomplete="current-password"
+          required
+        />
+      </div>
+
+      <!-- @if (...) : nouvelle syntaxe Angular 17+ remplacant *ngIf. -->
+      <!-- Le bloc HTML interne est rendu uniquement si la condition est -->
+      <!-- vraie (ici : si erreur() n'est pas une chaine vide). -->
+      @if (erreur()) {
+        <p class="form-error" role="alert">{{ erreur() }}</p>
+      }
+
+      <!-- Bouton de soumission. [disabled] le grise pendant le chargement -->
+      <!-- pour empecher les doubles clics. -->
+      <button type="submit" class="btn-primary" [disabled]="loading()">
+        @if (loading()) {
+          Connexion...
+        } @else {
+          Se connecter
+        }
+      </button>
+
+    </form>
+
+  </div>
+
+</main>

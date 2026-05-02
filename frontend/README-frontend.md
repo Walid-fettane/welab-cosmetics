@@ -19,9 +19,16 @@ Ce frontend communique avec l'API REST Symfony pour gerer les parties, questions
 ```
 frontend/src/app/
 ├── models/                    # Interfaces TypeScript (typage des donnees)
-│   └── interfaces.ts
+│   ├── interfaces.ts
+│   └── admin-interfaces.ts    # Interfaces pour l'espace administrateur
 ├── services/                  # Services (communication avec l'API)
-│   └── api.service.ts
+│   ├── api.ts                 # Appels API du jeu (joueurs, parties, questions)
+│   ├── api-admin.ts           # Appels API admin (CRUD questions)
+│   └── auth.ts                # Gestion du jeton JWT (login, logout)
+├── interceptors/              # Intercepteurs HTTP globaux
+│   └── auth-interceptor.ts    # Ajoute Authorization sur /api/admin/*
+├── guards/                    # Guards de route
+│   └── auth-guard.ts          # Protege /admin/dashboard
 ├── pages/                     # Pages de l'application (une par ecran)
 │   ├── home/                  # Page d'accueil ("Bienvenue dans le jeu We Lab")
 │   │   ├── home.ts
@@ -35,12 +42,20 @@ frontend/src/app/
 │   │   ├── game.ts
 │   │   ├── game.html
 │   │   └── game.scss
-│   └── result/                # Ecran de fin (score + bilan)
-│       ├── result.ts
-│       ├── result.html
-│       └── result.scss
+│   ├── result/                # Ecran de fin (score + bilan)
+│   │   ├── result.ts
+│   │   ├── result.html
+│   │   └── result.scss
+│   ├── admin-login/           # Connexion administrateur
+│   │   ├── admin-login.ts
+│   │   ├── admin-login.html
+│   │   └── admin-login.scss
+│   └── admin-dashboard/       # Tableau de bord administrateur (CRUD questions)
+│       ├── admin-dashboard.ts
+│       ├── admin-dashboard.html
+│       └── admin-dashboard.scss
 ├── app.routes.ts              # Definition des routes
-├── app.config.ts              # Configuration globale (HttpClient, etc.)
+├── app.config.ts              # Configuration globale (HttpClient + intercepteur)
 ├── app.ts                     # Composant racine
 └── app.html                   # Template racine (router-outlet)
 ```
@@ -53,6 +68,8 @@ frontend/src/app/
 | `/pseudo` | PseudoComponent | Formulaire de saisie du pseudo |
 | `/game` | GameComponent | Ecran de jeu (questions, choix, score en direct) |
 | `/result` | ResultComponent | Ecran de fin avec score final et bilan |
+| `/admin/login` | AdminLogin | Page de connexion administrateur (publique) |
+| `/admin/dashboard` | AdminDashboard | Tableau de bord admin (protege par authGuard) |
 
 ### Communication avec l'API
 
@@ -162,3 +179,88 @@ A chaque action du joueur, Angular envoie une requete HTTP au serveur :
 
 Ce fonctionnement empeche la triche : le navigateur ne connait jamais
 la bonne reponse avant que le joueur ait repondu.
+
+---
+
+## Partie 3 - Espace administrateur
+
+L'application dispose d'un espace dedie aux administrateurs du laboratoire,
+qui leur permet de gerer la base des questions du jeu.
+
+### Acces et identifiants
+
+| Element | Valeur |
+|---------|--------|
+| URL de connexion | `http://localhost:4200/admin/login` |
+| Email par defaut | `admin@welab.fr` |
+| Mot de passe par defaut | `admin1234` |
+
+Le compte administrateur est cree automatiquement par les fixtures
+Doctrine (`make fixtures` cote backend). Il peut etre modifie ensuite
+en base de donnees via Adminer.
+
+### Que peut faire un administrateur ?
+
+Une fois connecte, l'admin arrive sur le tableau de bord
+(`/admin/dashboard`) qui propose :
+
+- **Lister** toutes les questions enregistrees, triees par mini-jeu puis
+  par difficulte. Chaque ligne affiche l'enonce, le mini-jeu (badge
+  rose), la difficulte (badge vert / jaune / rouge), la bonne reponse
+  et deux boutons d'action.
+- **Ajouter** une nouvelle question via un formulaire qui demande
+  l'enonce, la bonne reponse, la difficulte (Facile / Moyen / Difficile),
+  le mini-jeu (selectionne dans une liste deroulante) et les 4 choix
+  proposes au joueur. La bonne reponse doit obligatoirement faire
+  partie des 4 choix : un message d'erreur s'affiche sinon.
+- **Modifier** une question existante via le meme formulaire,
+  prerempli avec les valeurs actuelles.
+- **Supprimer** une question apres confirmation (popup native du
+  navigateur). Les reponses qui referencaient cette question sont
+  supprimees automatiquement par le backend (cascade Doctrine).
+- **Se deconnecter** via un bouton dans l'en-tete : le jeton JWT
+  est supprime du localStorage et l'admin est renvoye au login.
+
+### Fonctionnement technique
+
+L'authentification repose sur un JSON Web Token (JWT) signe par le
+backend Symfony. Voici la chaine de bout en bout :
+
+1. **Connexion (`POST /api/admin/login`)** : l'admin envoie son email
+   et son mot de passe ; le backend verifie les identifiants et
+   renvoie `{ token: "eyJhbGc..." }`. Cette route est publique (pas
+   de jeton attendu en entree).
+
+2. **Stockage du jeton** : `AuthService.login()` utilise l'operateur
+   RxJS `tap` pour ecrire le jeton dans `localStorage` sous la cle
+   `welab_admin_token`. Le jeton survit a la fermeture de l'onglet.
+
+3. **Intercepteur HTTP (`auth-interceptor.ts`)** : pour chaque requete
+   sortante, l'intercepteur regarde l'URL :
+   - Si elle commence par `/api/admin/` ET ce n'est pas la route de
+     login ET un jeton est stocke -> il clone la requete et lui ajoute
+     l'en-tete `Authorization: Bearer <token>`.
+   - Sinon -> il laisse passer la requete telle quelle.
+
+4. **Guard de route (`auth-guard.ts`)** : la route `/admin/dashboard`
+   est decoree par `canActivate: [authGuard]`. Avant chaque
+   activation, le guard verifie qu'un jeton est present cote client.
+   Sinon il retourne un `UrlTree` qui equivaut a une redirection vers
+   `/admin/login`. Le dashboard ne peut donc jamais s'afficher en
+   etant deconnecte.
+
+5. **Expiration / 401** : si le serveur repond `401 Unauthorized` sur
+   une route admin (jeton expire, signature invalide, etc.),
+   l'intercepteur capture l'erreur, supprime le jeton local et
+   redirige l'admin vers `/admin/login`. La gestion est centralisee
+   dans l'intercepteur, donc aucun composant n'a besoin de la
+   reproduire.
+
+### Pourquoi localStorage et pas un cookie ?
+
+Le projet utilise `localStorage` pour la simplicite : aucune
+configuration cote serveur n'est necessaire (pas de SameSite, pas de
+httpOnly, pas de domaine partage), et l'envoi du jeton se fait via un
+en-tete explicite gere par l'intercepteur. En production avec un
+deploiement public, un cookie `httpOnly` serait plus sur (resistant
+au XSS) ; ici le jeu est pedagogique et tourne en local au laboratoire.

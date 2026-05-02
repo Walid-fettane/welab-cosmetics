@@ -1,0 +1,221 @@
+<!-- Tableau de bord d'administration. -->
+<!-- Compose de : un en-tete, une zone formulaire (conditionnelle) et -->
+<!-- un tableau qui liste toutes les questions enregistrees. -->
+
+<main class="admin-page">
+
+  <!-- ============== EN-TETE ============== -->
+  <header class="admin-header">
+    <div class="admin-header-left">
+      <h1 class="admin-title">Administration</h1>
+      <!-- @if : nouvelle syntaxe Angular 17+ remplacant *ngIf. -->
+      <!-- Affiche l'email seulement quand on l'a recu du backend. -->
+      @if (adminEmail()) {
+        <p class="admin-email">{{ adminEmail() }}</p>
+      }
+    </div>
+    <!-- (click) : evenement DOM standard. Equivaut a addEventListener. -->
+    <button type="button" class="btn-secondary" (click)="deconnexion()">
+      Deconnexion
+    </button>
+  </header>
+
+  <!-- ============== CHARGEMENT INITIAL ============== -->
+  <!-- Pendant le forkJoin initial, on affiche juste un message. -->
+  @if (loading()) {
+    <p class="admin-info">Chargement...</p>
+  } @else {
+
+    <!-- ============== ERREUR GLOBALE EVENTUELLE ============== -->
+    @if (erreurGlobale()) {
+      <p class="admin-error" role="alert">{{ erreurGlobale() }}</p>
+    }
+
+    <!-- ============== BOUTON D'AJOUT ============== -->
+    <!-- Cache pendant l'ouverture du formulaire pour eviter le doublon. -->
+    @if (!formOuvert()) {
+      <div class="admin-actions">
+        <button type="button" class="btn-primary" (click)="ouvrirAjout()">
+          Ajouter une question
+        </button>
+      </div>
+    }
+
+    <!-- ============== FORMULAIRE D'AJOUT / MODIFICATION ============== -->
+    @if (formOuvert()) {
+      <section class="admin-form-card">
+        <h2 class="admin-form-title">
+          @if (questionEnEdition()) {
+            Modifier la question #{{ questionEnEdition()!.id }}
+          } @else {
+            Nouvelle question
+          }
+        </h2>
+
+        <form class="admin-form" (ngSubmit)="enregistrer()">
+
+          <!-- ----- Enonce ----- -->
+          <div class="form-group">
+            <label for="form-enonce" class="form-label">Enonce</label>
+            <!-- textarea pour autoriser un texte un peu long. -->
+            <!-- Le binding [ngModel] + (ngModelChange) est l'equivalent -->
+            <!-- du raccourci [(ngModel)] mais en deux temps (necessaire -->
+            <!-- avec les signals, voir admin-login.html pour le detail). -->
+            <textarea
+              id="form-enonce"
+              class="form-input form-textarea"
+              [ngModel]="enonce()"
+              (ngModelChange)="enonce.set($event)"
+              name="enonce"
+              rows="2"
+              maxlength="255"
+              required
+            ></textarea>
+          </div>
+
+          <!-- ----- Bonne reponse ----- -->
+          <div class="form-group">
+            <label for="form-bonne" class="form-label">
+              Bonne reponse (doit etre presente parmi les 4 choix)
+            </label>
+            <input
+              id="form-bonne"
+              type="text"
+              class="form-input"
+              [ngModel]="bonneReponse()"
+              (ngModelChange)="bonneReponse.set($event)"
+              name="bonneReponse"
+              maxlength="100"
+              required
+            />
+          </div>
+
+          <!-- ----- Difficulte (select) ----- -->
+          <div class="form-group">
+            <label for="form-difficulte" class="form-label">Difficulte</label>
+            <!-- "+$event" : l'operateur unaire "+" convertit une chaine -->
+            <!-- en nombre. Necessaire car les <option [value]="..."> sont -->
+            <!-- transmises sous forme de chaines, mais le backend attend -->
+            <!-- un entier strict pour la difficulte. -->
+            <select
+              id="form-difficulte"
+              class="form-input"
+              [ngModel]="difficulte()"
+              (ngModelChange)="difficulte.set(+$event)"
+              name="difficulte"
+            >
+              <option [value]="1">Facile</option>
+              <option [value]="2">Moyen</option>
+              <option [value]="3">Difficile</option>
+            </select>
+          </div>
+
+          <!-- ----- Mini-jeu (select) ----- -->
+          <div class="form-group">
+            <label for="form-minijeu" class="form-label">Mini-jeu</label>
+            <select
+              id="form-minijeu"
+              class="form-input"
+              [ngModel]="miniJeuId()"
+              (ngModelChange)="miniJeuId.set(+$event)"
+              name="miniJeuId"
+            >
+              <!-- @for : nouvelle syntaxe Angular 17+ remplacant *ngFor. -->
+              <!-- "track mj.id" est OBLIGATOIRE et permet a Angular de -->
+              <!-- reutiliser les elements du DOM lorsque le tableau -->
+              <!-- change (ajout/suppression), pour de meilleures perfs. -->
+              @for (mj of miniJeux(); track mj.id) {
+                <option [value]="mj.id">{{ mj.nomMiniJeu }}</option>
+              }
+            </select>
+          </div>
+
+          <!-- ----- 4 choix proposes ----- -->
+          <div class="form-group">
+            <label class="form-label">Choix proposes au joueur</label>
+            <input class="form-input" type="text" [ngModel]="choix1()" (ngModelChange)="choix1.set($event)" name="choix1" placeholder="Choix 1" maxlength="100" />
+            <input class="form-input" type="text" [ngModel]="choix2()" (ngModelChange)="choix2.set($event)" name="choix2" placeholder="Choix 2" maxlength="100" />
+            <input class="form-input" type="text" [ngModel]="choix3()" (ngModelChange)="choix3.set($event)" name="choix3" placeholder="Choix 3" maxlength="100" />
+            <input class="form-input" type="text" [ngModel]="choix4()" (ngModelChange)="choix4.set($event)" name="choix4" placeholder="Choix 4" maxlength="100" />
+          </div>
+
+          <!-- ----- Erreur formulaire ----- -->
+          @if (erreurForm()) {
+            <p class="form-error" role="alert">{{ erreurForm() }}</p>
+          }
+
+          <!-- ----- Boutons d'action ----- -->
+          <div class="form-actions">
+            <button type="submit" class="btn-primary" [disabled]="enregistrement()">
+              @if (enregistrement()) {
+                Enregistrement...
+              } @else {
+                Enregistrer
+              }
+            </button>
+            <button type="button" class="btn-secondary" (click)="fermer()">
+              Annuler
+            </button>
+          </div>
+        </form>
+      </section>
+    }
+
+    <!-- ============== TABLEAU DES QUESTIONS ============== -->
+    <section class="admin-list-card">
+      <h2 class="admin-list-title">
+        Questions enregistrees ({{ questions().length }})
+      </h2>
+
+      <!-- Cas vide : on affiche un message au lieu d'un tableau vide. -->
+      @if (questions().length === 0) {
+        <p class="admin-info">Aucune question enregistree pour l'instant.</p>
+      } @else {
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Enonce</th>
+              <th>Mini-jeu</th>
+              <th>Difficulte</th>
+              <th>Bonne reponse</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- @for boucle sur la liste des questions. -->
+            <!-- track q.id : Angular se sert de l'id pour suivre chaque -->
+            <!-- ligne et eviter de re-creer tout le DOM a chaque mise a -->
+            <!-- jour de la liste. -->
+            @for (q of questions(); track q.id) {
+              <tr>
+                <td class="cell-enonce">{{ q.enonce }}</td>
+                <td>
+                  <span class="badge badge-minijeu">{{ q.miniJeuNom }}</span>
+                </td>
+                <td>
+                  <!-- Le badge change de couleur selon la difficulte. -->
+                  <!-- L'interpolation "{{ q.difficulte }}" dans le nom -->
+                  <!-- de classe genere "badge-diff-1", "-2" ou "-3". -->
+                  <span class="badge badge-diff badge-diff-{{ q.difficulte }}">
+                    {{ libelleDifficulte(q.difficulte) }}
+                  </span>
+                </td>
+                <td>{{ q.elementADeviner }}</td>
+                <td class="cell-actions">
+                  <button type="button" class="btn-mini" (click)="ouvrirModif(q)">
+                    Modifier
+                  </button>
+                  <button type="button" class="btn-mini btn-mini-danger" (click)="supprimer(q)">
+                    Supprimer
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </section>
+
+  }
+
+</main>

@@ -1,0 +1,353 @@
+// Styles du tableau de bord d'administration.
+// Reprend la palette violet / rose du reste de l'application, mais
+// avec un layout pleine largeur (en-tete + cartes + tableau) plutot
+// qu'une carte centrale unique comme sur le login.
+
+$bg-start:         #1a0a3c;
+$bg-end:           #7c3aed;
+$color-white:      #ffffff;
+$color-pink:       #f9a8d4;
+$color-pink-hover: #f472b6;
+$color-error:      #fca5a5;
+$color-success:    #86efac;
+$color-warning:    #fde047;
+
+// ---- Conteneur principal pleine page ----
+.admin-page {
+  min-height: 100vh;
+  padding: 2rem 1.5rem;
+  background: linear-gradient(135deg, $bg-start 0%, $bg-end 100%);
+  color: $color-white;
+  box-sizing: border-box;
+}
+
+// ============== EN-TETE ==============
+
+.admin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  max-width: 1100px;
+  margin: 0 auto 2rem auto;
+}
+
+.admin-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.admin-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.admin-email {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+// ============== MESSAGES INFO / ERREUR ==============
+
+.admin-info {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.85);
+  max-width: 1100px;
+  margin: 1rem auto;
+}
+
+.admin-error {
+  max-width: 1100px;
+  margin: 1rem auto;
+  color: $color-error;
+  background: rgba(252, 165, 165, 0.1);
+  border: 1px solid rgba(252, 165, 165, 0.3);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+}
+
+.admin-actions {
+  max-width: 1100px;
+  margin: 0 auto 1.5rem auto;
+  display: flex;
+  justify-content: flex-end;
+}
+
+// ============== CARTES (formulaire + liste) ==============
+
+.admin-form-card,
+.admin-list-card {
+  max-width: 1100px;
+  margin: 0 auto 1.5rem auto;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 1.25rem;
+  padding: 2rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-sizing: border-box;
+}
+
+.admin-form-title,
+.admin-list-title {
+  margin-top: 0;
+  margin-bottom: 1.25rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+// ============== FORMULAIRE ==============
+
+.admin-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.form-label {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.form-input {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  border-radius: 0.75rem;
+  padding: 0.65rem 0.9rem;
+  color: $color-white;
+  font-size: 0.95rem;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.2s, background 0.2s;
+  font-family: inherit;
+
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: $color-pink;
+    background: rgba(255, 255, 255, 0.18);
+  }
+
+  &:focus-visible {
+    outline: 3px solid $color-pink;
+    outline-offset: 2px;
+  }
+
+  // Pour les <select>, les <option> du menu deroulant ne respectent
+  // pas la couleur du parent : on les stylise explicitement pour qu'elles
+  // restent lisibles (fond fonce + texte blanc).
+  option {
+    background: $bg-start;
+    color: $color-white;
+  }
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.form-error {
+  color: $color-error;
+  font-size: 0.875rem;
+  background: rgba(252, 165, 165, 0.1);
+  border: 1px solid rgba(252, 165, 165, 0.3);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  margin: 0;
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+// ============== TABLEAU ==============
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+
+  th, td {
+    text-align: left;
+    padding: 0.75rem 0.6rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    vertical-align: top;
+  }
+
+  th {
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  tbody tr:hover {
+    background: rgba(255, 255, 255, 0.03);
+  }
+}
+
+.cell-enonce {
+  max-width: 380px;
+  word-break: break-word;
+}
+
+.cell-actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+// ============== BADGES ==============
+
+.badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badge-minijeu {
+  background: rgba(249, 168, 212, 0.2);
+  color: $color-pink;
+  border: 1px solid rgba(249, 168, 212, 0.4);
+}
+
+.badge-diff-1 {
+  background: rgba(134, 239, 172, 0.18);
+  color: $color-success;
+  border: 1px solid rgba(134, 239, 172, 0.4);
+}
+
+.badge-diff-2 {
+  background: rgba(253, 224, 71, 0.18);
+  color: $color-warning;
+  border: 1px solid rgba(253, 224, 71, 0.4);
+}
+
+.badge-diff-3 {
+  background: rgba(252, 165, 165, 0.18);
+  color: $color-error;
+  border: 1px solid rgba(252, 165, 165, 0.4);
+}
+
+// ============== BOUTONS ==============
+
+.btn-primary {
+  background: $color-pink;
+  color: #1a0a3c;
+  border: none;
+  border-radius: 50px;
+  padding: 0.75rem 1.75rem;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+  box-shadow: 0 4px 15px rgba(249, 168, 212, 0.4);
+
+  &:hover:not(:disabled) {
+    background: $color-pink-hover;
+    box-shadow: 0 6px 20px rgba(244, 114, 182, 0.5);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  &:focus-visible {
+    outline: 3px solid $color-white;
+    outline-offset: 3px;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.12);
+  color: $color-white;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 50px;
+  padding: 0.65rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+
+  &:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.4);
+  }
+
+  &:focus-visible {
+    outline: 3px solid $color-pink;
+    outline-offset: 2px;
+  }
+}
+
+.btn-mini {
+  background: rgba(255, 255, 255, 0.12);
+  color: $color-white;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 0.5rem;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+}
+
+.btn-mini-danger {
+  background: rgba(252, 165, 165, 0.15);
+  color: $color-error;
+  border-color: rgba(252, 165, 165, 0.4);
+
+  &:hover {
+    background: rgba(252, 165, 165, 0.3);
+    border-color: rgba(252, 165, 165, 0.7);
+  }
+}
+
+// ============== ADAPTATION MOBILE ==============
+
+@media (max-width: 720px) {
+  .admin-form-card,
+  .admin-list-card {
+    padding: 1.25rem;
+  }
+
+  .admin-table {
+    font-size: 0.85rem;
+    th, td { padding: 0.5rem 0.4rem; }
+  }
+
+  .cell-enonce {
+    max-width: 200px;
+  }
+}
