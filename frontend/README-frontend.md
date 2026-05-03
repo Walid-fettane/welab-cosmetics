@@ -1,4 +1,4 @@
-# We-Lab Cosmetics - Frontend Angular 19
+# We-Lab Cosmetics - Frontend Angular 21
 
 Application web du jeu pedagogique interactif We-Lab Cosmetics.
 Ce frontend communique avec l'API REST Symfony pour gerer les parties, questions et reponses.
@@ -9,7 +9,7 @@ Ce frontend communique avec l'API REST Symfony pour gerer les parties, questions
 
 ### Stack
 
-- **Angular 19** avec standalone components
+- **Angular 21** avec standalone components
 - **TypeScript** pour le typage statique
 - **SCSS** pour les styles
 - **HttpClient** pour les appels API REST

@@ -50,7 +50,7 @@ warn()    { echo -e "${YELLOW}[!]${NC} $*"; }
 # Utile pour les messages d'erreur : ils restent visibles meme si la
 # sortie standard est redirigee vers un fichier.
 error()   { echo -e "${RED}[ERREUR]${NC} $*" >&2; }
-step()    { echo -e "\n${BLUE}[$1/11]${NC} $2"; }
+step()    { echo -e "\n${BLUE}[$1/12]${NC} $2"; }
 
 # -----------------------------------------------------------------------------
 # Banniere de demarrage
@@ -61,7 +61,7 @@ echo -e "${BLUE}     WE-LAB COSMETICS - Installation automatisee            ${NC
 echo -e "${BLUE}============================================================${NC}"
 
 # =============================================================================
-# [1/11] Verifier que Docker est installe
+# [1/12] Verifier que Docker est installe
 # =============================================================================
 step 1 "Verification de Docker..."
 # command -v <nom> : affiche le chemin de la commande si elle existe,
@@ -75,7 +75,7 @@ command -v docker >/dev/null 2>&1 || {
 success "Docker trouve"
 
 # =============================================================================
-# [2/11] Verifier que docker compose v2 est disponible
+# [2/12] Verifier que docker compose v2 est disponible
 # =============================================================================
 step 2 "Verification de docker compose..."
 docker compose version >/dev/null 2>&1 || {
@@ -85,7 +85,7 @@ docker compose version >/dev/null 2>&1 || {
 success "Docker Compose disponible"
 
 # =============================================================================
-# [3/11] Creer le .env racine (UID/GID Docker) si absent
+# [3/12] Creer le .env racine (UID/GID Docker) si absent
 # =============================================================================
 step 3 "Verification du fichier .env (racine)..."
 # [ ! -f .env ] : test "le fichier .env n'existe PAS"
@@ -106,7 +106,7 @@ else
 fi
 
 # =============================================================================
-# [4/11] Creer backend/.env avec des secrets aleatoires si absent
+# [4/12] Creer backend/.env avec des secrets aleatoires si absent
 # =============================================================================
 step 4 "Verification de backend/.env (secrets aleatoires)..."
 if [ ! -f backend/.env ]; then
@@ -130,7 +130,7 @@ else
 fi
 
 # =============================================================================
-# [5/11] Lancer les containers Docker
+# [5/12] Lancer les containers Docker
 # =============================================================================
 step 5 "Demarrage des containers Docker (build si necessaire)..."
 # -d : mode detache (les containers tournent en arriere-plan)
@@ -138,7 +138,7 @@ step 5 "Demarrage des containers Docker (build si necessaire)..."
 docker compose up -d --build
 
 # =============================================================================
-# [6/11] Attendre que PostgreSQL soit pret a accepter des connexions
+# [6/12] Attendre que PostgreSQL soit pret a accepter des connexions
 # =============================================================================
 step 6 "Attente de PostgreSQL (max 60 secondes)..."
 TIMEOUT=60
@@ -162,7 +162,7 @@ echo ""
 success "PostgreSQL pret"
 
 # =============================================================================
-# [7/11] Attendre la fin du composer install (declenche par le container PHP)
+# [7/12] Attendre la fin du composer install (declenche par le container PHP)
 # =============================================================================
 step 7 "Attente de la fin de composer install (max 180 secondes)..."
 # Le service php du docker-compose lance "composer install" automatiquement
@@ -199,7 +199,7 @@ done
 success "Container PHP pret"
 
 # =============================================================================
-# [8/11] Generer les cles RSA pour les JWT si absentes
+# [8/12] Generer les cles RSA pour les JWT si absentes
 # =============================================================================
 step 8 "Verification des cles JWT..."
 if [ ! -f backend/config/jwt/private.pem ]; then
@@ -211,7 +211,7 @@ else
 fi
 
 # =============================================================================
-# [9/11] Attendre la fin de npm install dans le container Node
+# [9/12] Attendre la fin de npm install dans le container Node
 # =============================================================================
 step 9 "Attente de la fin de npm install (max 240 secondes)..."
 TIMEOUT=240
@@ -230,7 +230,7 @@ echo ""
 success "Dependances Node verifiees"
 
 # =============================================================================
-# [10/11] Appliquer les migrations Doctrine (creer les tables)
+# [10/12] Appliquer les migrations Doctrine (creer les tables)
 # =============================================================================
 step 10 "Application des migrations Doctrine..."
 # --no-interaction : ne pose aucune question (mode automatique)
@@ -239,11 +239,26 @@ docker compose exec -T php php bin/console doctrine:migrations:migrate --no-inte
 success "Migrations appliquees"
 
 # =============================================================================
-# [11/11] Charger les fixtures (35 questions + compte admin)
+# [11/12] Charger les fixtures (35 questions + compte admin)
 # =============================================================================
 step 11 "Chargement des fixtures (35 questions + compte admin)..."
 docker compose exec -T php php bin/console doctrine:fixtures:load --no-interaction
 success "Fixtures chargees"
+
+# =============================================================================
+# [12/12] Preparer la base de donnees de test pour PHPUnit
+# =============================================================================
+# On cree (si necessaire) une base de donnees separee "welab_db_test" pour
+# les tests automatises, et on y applique les migrations. Cela evite que
+# les tests fonctionnels polluent la base de developpement.
+# Les deux commandes utilisent --if-not-exists et --no-interaction pour
+# rester idempotentes : relancer start.sh ne cassera jamais ces etapes.
+step 12 "Preparation de la base de donnees de test (PHPUnit)..."
+docker compose exec -T php php bin/console --env=test \
+    doctrine:database:create --if-not-exists --quiet
+docker compose exec -T php php bin/console --env=test \
+    doctrine:migrations:migrate --no-interaction --quiet
+success "Base de donnees de test prete (welab_db_test)"
 
 # =============================================================================
 # Recapitulatif final
@@ -275,4 +290,7 @@ echo "  make logs        : voir les logs des containers"
 echo "  make shell-php   : terminal dans le container Symfony"
 echo "  make shell-node  : terminal dans le container Angular"
 echo "  make stop        : arreter les containers"
+echo ""
+echo -e "${BLUE}Tests automatises :${NC}"
+echo "  Pour lancer les tests : docker compose exec php php bin/phpunit"
 echo ""

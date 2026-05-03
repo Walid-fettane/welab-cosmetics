@@ -9,7 +9,11 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
+// orm dit cette classe correspond a une table sql
+// repositoryClass indique quel Repository utiliser pour LIRE cette table
+// sinn repository doctrine ignore la class 
 #[ORM\Entity(repositoryClass: JoueurRepository::class)]
+// UniqueEntity pour pas avoir 2 joueurs avev mm pseudo (regle de validation)
 #[UniqueEntity(fields: ['pseudo'], message: 'Ce pseudo est deja pris')]
 class Joueur
 {

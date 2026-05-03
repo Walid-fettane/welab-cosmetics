@@ -1,6 +1,49 @@
 # We-Lab Cosmetics - Test Backend
 
-A
+## Tests automatises PHPUnit
+
+Le projet inclut 7 tests PHPUnit qui couvrent la logique metier critique.
+
+### Tests unitaires (tests/Entity/)
+
+- `ReponseTest::testBonneReponse` — verifie que `verifierReponse()` valide
+  une bonne reponse avec le bon score (egal a la difficulte)
+- `ReponseTest::testMauvaiseReponse` — verifie le rejet d'une mauvaise
+  reponse (score 0)
+- `ReponseTest::testReponsePassee` — verifie le cas special `__SKIPPED__`
+  (bouton Passer cote frontend)
+- `ReponseTest::testInsensibleCasseEspaces` — verifie la normalisation
+  (insensible a la casse + trim des espaces)
+- `PartieTest::testRecalculerScoreSomme` — verifie que la somme des
+  scores des reponses est correctement calculee
+- `PartieTest::testRecalculerScoreNbReponse` — verifie que le compteur
+  `nb_reponse` est mis a jour
+
+### Tests fonctionnels (tests/Controller/)
+
+- `JoueurControllerTest::testCreerJoueurIdempotent` — verifie que
+  `POST /api/joueurs` renvoie 201 et reste idempotent (deuxieme appel
+  avec le meme pseudo renvoie le joueur existant)
+
+### Lancer les tests
+
+Le test fonctionnel utilise une base de donnees separee (`welab_db_test`)
+pour ne pas polluer la base de developpement. A creer la premiere fois :
+
+```bash
+docker compose exec php php bin/console --env=test doctrine:database:create
+docker compose exec php php bin/console --env=test doctrine:migrations:migrate --no-interaction
+```
+
+Puis a chaque execution :
+
+```bash
+docker compose exec php php bin/phpunit
+```
+
+Resultat attendu : `OK (7 tests, 23 assertions)`.
+
+---
 
 ## Test 1 - Liste des mini-jeux :
 
@@ -230,4 +273,3 @@ walid@walid:~/Documents/projetSI/welab-cosmetics$ curl -s -X PATCH http://localh
     "date_fin": "2026-03-27 20:10:00"
 }
 walid@walid:~/Documents/projetSI/welab-cosmetics$ 
-

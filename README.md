@@ -14,7 +14,7 @@ Un jeu web educatif de 45 minutes comprenant 3 mini-jeux :
 | Composant | Technologie | Port |
 |-----------|-------------|------|
 | Backend API | Symfony 7 | 8000 |
-| Frontend | Angular 19 | 4200 |
+| Frontend | Angular 21 | 4200 |
 | Base de donnees | PostgreSQL 16 | 5432 |
 | Admin BDD | Adminer | 8080 |
 
