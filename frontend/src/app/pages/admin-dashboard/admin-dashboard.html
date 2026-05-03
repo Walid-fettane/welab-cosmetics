@@ -20,6 +20,25 @@
     </button>
   </header>
 
+  <!-- ============== BANDEAU D'INFORMATION ============== -->
+  <!-- Note explicative pour documenter la limitation du localStorage -->
+  <!-- (les images choisies via les menus deroulants ne sont stockees -->
+  <!-- que sur le poste de l'admin connecte). -->
+  <aside class="info-banner" role="note">
+    <p>
+      Astuce : pour ajouter une question avec des images dans le
+      mini-jeu "Produits et Contenants", utilisez les menus deroulants
+      d'images en bas du formulaire. Les images sont stockees localement
+      dans votre navigateur (localStorage) et persistent entre les
+      sessions.
+    </p>
+    <p>
+      Pour partager une nouvelle question DnD avec image entre plusieurs
+      postes, il faut redeployer la base de donnees ou enrichir le
+      fichier de mapping cote code.
+    </p>
+  </aside>
+
   <!-- ============== CHARGEMENT INITIAL ============== -->
   <!-- Pendant le forkJoin initial, on affiche juste un message. -->
   @if (loading()) {
@@ -138,6 +157,87 @@
             <input class="form-input" type="text" [ngModel]="choix3()" (ngModelChange)="choix3.set($event)" name="choix3" placeholder="Choix 3" maxlength="100" />
             <input class="form-input" type="text" [ngModel]="choix4()" (ngModelChange)="choix4.set($event)" name="choix4" placeholder="Choix 4" maxlength="100" />
           </div>
+
+          <!-- ============================================================ -->
+          <!-- Section specifique au mini-jeu DnD (produit_contenant).       -->
+          <!-- Affichee uniquement si le mini-jeu selectionne est de ce type.-->
+          <!-- Permet a l'admin de choisir, parmi une bibliotheque preparee, -->
+          <!-- les deux SVG associes a la question : l'image draggable et    -->
+          <!-- l'image de feedback positif (contenant rempli + coche).        -->
+          <!-- ============================================================ -->
+          @if (estProduitContenant()) {
+            <fieldset class="dnd-fieldset">
+              <legend class="dnd-legend">Images du mini-jeu Produits / Contenants</legend>
+
+              <!-- ----- Image du produit a faire glisser ----- -->
+              <div class="form-group">
+                <label for="form-produit-image" class="form-label">
+                  Image du produit (a drag)
+                </label>
+                <!-- Apercu : taille fixee a 80x80 px pour donner un -->
+                <!-- aperçu visuel sans alourdir le formulaire. -->
+                @if (selectedProduit()) {
+                  <img
+                    class="image-preview"
+                    [src]="selectedProduit()"
+                    alt="Apercu de l'image produit selectionnee"
+                  />
+                } @else {
+                  <div class="image-preview image-preview-vide" aria-hidden="true">?</div>
+                }
+                <select
+                  id="form-produit-image"
+                  class="form-input"
+                  [ngModel]="selectedProduit()"
+                  (ngModelChange)="selectedProduit.set($event)"
+                  name="produitImage"
+                >
+                  <option value="">Aucune image</option>
+                  @for (img of bibliothequeProduits; track img.chemin) {
+                    <option [value]="img.chemin">{{ img.label }}</option>
+                  }
+                </select>
+              </div>
+
+              <!-- ----- Image de succes (contenant rempli) ----- -->
+              <div class="form-group">
+                <label for="form-succes-image" class="form-label">
+                  Image de succes (contenant rempli)
+                </label>
+                @if (selectedSucces()) {
+                  <img
+                    class="image-preview"
+                    [src]="selectedSucces()"
+                    alt="Apercu de l'image de succes selectionnee"
+                  />
+                } @else {
+                  <div class="image-preview image-preview-vide" aria-hidden="true">?</div>
+                }
+                <select
+                  id="form-succes-image"
+                  class="form-input"
+                  [ngModel]="selectedSucces()"
+                  (ngModelChange)="selectedSucces.set($event)"
+                  name="succesImage"
+                >
+                  <option value="">Aucune image</option>
+                  @for (img of bibliothequeSucces; track img.chemin) {
+                    <option [value]="img.chemin">{{ img.label }}</option>
+                  }
+                </select>
+              </div>
+
+              <!-- Mention discrete pour expliquer comment etendre la -->
+              <!-- bibliotheque au-dela des images deja preparees. -->
+              <p class="dnd-hint">
+                Pour ajouter de nouvelles images : deposer le SVG dans
+                <code>/frontend/public/images/dnd/</code> et ajouter une
+                entree dans <code>BIBLIOTHEQUE_PRODUITS</code> /
+                <code>BIBLIOTHEQUE_SUCCES</code> de
+                <code>question-images-mapping.ts</code>.
+              </p>
+            </fieldset>
+          }
 
           <!-- ----- Erreur formulaire ----- -->
           @if (erreurForm()) {

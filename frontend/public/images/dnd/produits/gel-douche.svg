@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 170" width="200" height="170">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fce7f3"/>
+      <stop offset="100%" stop-color="#a855f7"/>
+    </linearGradient>
+  </defs>
+  <!-- Grand cercle de gel central -->
+  <ellipse cx="100" cy="90" rx="55" ry="40" fill="url(#g)" stroke="#a855f7" stroke-width="2.5" opacity="0.85"/>
+  <!-- Multiples bulles de tailles variées -->
+  <circle cx="60" cy="60" r="10" fill="#fce7f3" stroke="#a855f7" stroke-width="2"/>
+  <circle cx="140" cy="55" r="12" fill="#fce7f3" stroke="#a855f7" stroke-width="2"/>
+  <circle cx="80" cy="35" r="8" fill="#fce7f3" stroke="#a855f7" stroke-width="2"/>
+  <circle cx="155" cy="100" r="14" fill="#fce7f3" stroke="#a855f7" stroke-width="2"/>
+  <circle cx="40" cy="120" r="11" fill="#fce7f3" stroke="#a855f7" stroke-width="2"/>
+  <circle cx="160" cy="135" r="9" fill="#fce7f3" stroke="#a855f7" stroke-width="2"/>
+  <circle cx="100" cy="140" r="13" fill="#fce7f3" stroke="#a855f7" stroke-width="2"/>
+  <!-- Reflets brillants sur les bulles -->
+  <circle cx="58" cy="56" r="2.5" fill="#fff" opacity="0.9"/>
+  <circle cx="138" cy="51" r="3" fill="#fff" opacity="0.9"/>
+  <circle cx="78" cy="32" r="2" fill="#fff" opacity="0.9"/>
+  <circle cx="153" cy="96" r="3.5" fill="#fff" opacity="0.9"/>
+  <circle cx="98" cy="136" r="3" fill="#fff" opacity="0.9"/>
+  <ellipse cx="85" cy="80" rx="20" ry="6" fill="#fff" opacity="0.5"/>
+</svg>

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 170" width="200" height="170">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fde68a"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+    <linearGradient id="hair" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#92400e"/>
+      <stop offset="100%" stop-color="#451a03"/>
+    </linearGradient>
+  </defs>
+  <!-- Mèche de cheveux ondulée -->
+  <path d="M 70 30 Q 85 50, 75 70 Q 65 90, 80 110 Q 95 130, 85 150 L 95 150 Q 105 130, 95 110 Q 85 90, 100 70 Q 115 50, 105 30 Z"
+        fill="url(#hair)" stroke="#451a03" stroke-width="1.5"/>
+  <path d="M 100 30 Q 115 50, 105 70 Q 95 90, 110 110 Q 125 130, 115 150 L 125 150 Q 135 130, 125 110 Q 115 90, 130 70 Q 145 50, 135 30 Z"
+        fill="url(#hair)" stroke="#451a03" stroke-width="1.5" opacity="0.9"/>
+  <!-- Reflets brillants sur les cheveux -->
+  <ellipse cx="85" cy="80" rx="2" ry="20" fill="#fde68a" opacity="0.6"/>
+  <ellipse cx="115" cy="80" rx="2" ry="20" fill="#fde68a" opacity="0.6"/>
+  <!-- Gouttes d'huile dorées -->
+  <path d="M 40 70 Q 35 80, 35 88 Q 35 95, 40 95 Q 45 95, 45 88 Q 45 80, 40 70 Z"
+        fill="url(#g)" stroke="#a855f7" stroke-width="1.5"/>
+  <path d="M 160 90 Q 155 100, 155 108 Q 155 115, 160 115 Q 165 115, 165 108 Q 165 100, 160 90 Z"
+        fill="url(#g)" stroke="#a855f7" stroke-width="1.5"/>
+  <ellipse cx="38" cy="80" rx="1.5" ry="3" fill="#fff" opacity="0.8"/>
+  <ellipse cx="158" cy="100" rx="1.5" ry="3" fill="#fff" opacity="0.8"/>
+</svg>

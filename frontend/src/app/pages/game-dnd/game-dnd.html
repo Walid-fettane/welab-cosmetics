@@ -1,0 +1,206 @@
+<!-- ================================================================== -->
+<!-- Template du composant drag and drop pour le mini-jeu 2.             -->
+<!--                                                                     -->
+<!-- Structure visuelle de haut en bas :                                 -->
+<!--   1. Texte d'instruction (souris + clavier) — visible avant reponse -->
+<!--   2. Zone "depart" : carte produit deplaçable + bouton Passer       -->
+<!--   3. Zone "cibles" : grille des 4 contenants                         -->
+<!--   4. Bandeau de feedback (apparait apres soumission)                -->
+<!--   5. Bouton "Question suivante" (apparait apres soumission)         -->
+<!-- ================================================================== -->
+<section class="dnd-container" aria-label="Zone de drag and drop">
+
+  <!-- ================================================================== -->
+  <!-- TEXTE D'INSTRUCTION (Amelioration 4)                                -->
+  <!-- Affiche uniquement tant que la reponse n'est pas encore soumise,    -->
+  <!-- pour ne pas encombrer l'ecran pendant l'affichage du feedback.      -->
+  <!-- peutInteragir() couvre les 3 cas (drop fait, attente, deja passe).  -->
+  <!-- ================================================================== -->
+  @if (peutInteragir()) {
+    <p class="dnd-instruction">
+      Glissez le produit dans le bon contenant — ou utilisez les touches
+      <kbd class="dnd-kbd">1</kbd> <kbd class="dnd-kbd">2</kbd>
+      <kbd class="dnd-kbd">3</kbd> <kbd class="dnd-kbd">4</kbd> pour
+      choisir, <kbd class="dnd-kbd">P</kbd> pour passer.
+    </p>
+  }
+
+  <!-- ================================================================== -->
+  <!-- ZONE DE DEPART (Amelioration 1 : ajout du bouton Passer a cote).    -->
+  <!-- Wrapper flex qui place sur une meme ligne (centree) la carte du    -->
+  <!-- produit a glisser et le bouton Passer optionnel a sa droite.       -->
+  <!-- ================================================================== -->
+  <div class="zone-depart">
+
+    <!-- ============================================================ -->
+    <!-- Liste source CDK : indispensable pour que le CDK comprenne   -->
+    <!-- d'ou part le drag (cdkDropList obligatoire meme si on ne     -->
+    <!-- reordonne pas son contenu).                                  -->
+    <!-- cdkDropListSortingDisabled : on ne reorganise pas le tableau. -->
+    <!-- ============================================================ -->
+    <div
+      class="dnd-source"
+      cdkDropList
+      id="dnd-source"
+      [cdkDropListConnectedTo]="idsCibles()"
+      cdkDropListSortingDisabled
+      aria-label="Zone de depart du produit"
+    >
+      <!-- Carte du produit visible uniquement tant que le joueur peut -->
+      <!-- encore drag (avant drop, hors attente serveur, hors passer). -->
+      @if (peutDrag()) {
+        <!-- cdkDrag rend le bloc deplaçable a la souris ET au doigt.  -->
+        <div class="produit-card" cdkDrag>
+
+          <!-- Image SVG du produit : si le mapping renvoie null (cas  -->
+          <!-- d'une question ajoutee par l'admin sans SVG associe),   -->
+          <!-- on retombe sur un placeholder texte avec point d'interro. -->
+          @if (produitImage()) {
+            <img
+              [src]="produitImage()"
+              [alt]="produitNom()"
+              class="produit-image"
+              draggable="false"
+            />
+          } @else {
+            <div class="produit-placeholder" aria-hidden="true">?</div>
+          }
+
+          <!-- Nom textuel du produit (label externe, lisibilite max). -->
+          <span class="produit-nom">{{ produitNom() }}</span>
+
+          <!-- Apercu agrandi affiche pendant le drag (cdkDragPreview). -->
+          <!-- Le CDK clone ce template et le suit avec le pointeur :    -->
+          <!-- on l'affiche plus grand pour bonne visibilite sous le    -->
+          <!-- doigt sur tablette ou mobile.                              -->
+          <ng-template cdkDragPreview>
+            @if (produitImage()) {
+              <img
+                [src]="produitImage()"
+                [alt]="produitNom()"
+                class="produit-preview"
+                draggable="false"
+              />
+            } @else {
+              <div class="produit-placeholder produit-placeholder-preview" aria-hidden="true">?</div>
+            }
+          </ng-template>
+
+        </div>
+      }
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- Bouton Passer (Amelioration 1).                              -->
+    <!-- Visible UNIQUEMENT tant que la reponse n'a pas ete soumise   -->
+    <!-- (peutInteragir() couvre toutes les conditions de blocage).   -->
+    <!-- Class .btn-skip (copiee de game.scss) : style identique au   -->
+    <!-- bouton Passer du QCM pour rester visuellement coherent.       -->
+    <!-- ============================================================ -->
+    @if (peutInteragir()) {
+      <button
+        type="button"
+        class="btn-skip btn-skip-dnd"
+        title="Passer cette question (raccourci : P)"
+        (click)="passer()"
+      >
+        Passer
+      </button>
+    }
+
+  </div>
+
+  <!-- ================================================================== -->
+  <!-- ZONES CIBLES : 4 contenants generes via @for sur les choix possibles -->
+  <!-- de la question. Chaque zone est un cdkDropList distinct identifie    -->
+  <!-- par son id "dnd-zone-N" (utilise par la source pour declarer les    -->
+  <!-- connexions autorisees via cdkDropListConnectedTo).                  -->
+  <!-- ================================================================== -->
+  <div class="dnd-targets" role="group" aria-label="Contenants disponibles">
+
+    <!-- @for : nouvelle syntaxe Angular 17+. La directive "track choix" -->
+    <!-- est obligatoire et permet a Angular de reutiliser les elements  -->
+    <!-- du DOM si l'ordre change, plutot que de tout re-creer.          -->
+    @for (choix of question().choix_possibles; track choix; let i = $index) {
+      <div
+        class="dnd-zone"
+        [id]="'dnd-zone-' + i"
+        cdkDropList
+        [cdkDropListConnectedTo]="['dnd-source']"
+        cdkDropListSortingDisabled
+        [class.drop-hover]="contenantSurvole() === choix && peutDrag()"
+        [class.pre-selectionnee]="contenantPreSelectionne() === choix"
+        [class.drop-correct]="estBonneReponse(choix)"
+        [class.drop-wrong]="estMauvaiseReponseChoisie(choix)"
+        [class.drop-disabled]="!peutDrag()"
+        (cdkDropListEntered)="surEntreeZone(choix)"
+        (cdkDropListExited)="surSortieZone()"
+        (cdkDropListDropped)="onDrop(choix)"
+        [attr.aria-label]="'Contenant ' + choix"
+      >
+        <!-- Image SVG du contenant. imageDeZone() applique la logique : -->
+        <!--   - SVG normal du contenant avant reponse                   -->
+        <!--   - SVG de succes (produit + coche) apres bonne reponse     -->
+        <!--   - SVG d'echec apres mauvaise reponse                       -->
+        @if (imageDeZone(choix)) {
+          <img
+            [src]="imageDeZone(choix)"
+            [alt]="choix"
+            class="contenant-image"
+            draggable="false"
+          />
+        } @else {
+          <div class="contenant-placeholder" aria-hidden="true">?</div>
+        }
+
+        <!-- Nom textuel du contenant (label externe lisible). -->
+        <span class="contenant-nom">{{ choix }}</span>
+
+        <!-- Petit loader 3 points affiche uniquement sur la zone     -->
+        <!-- choisie pendant l'attente de la reponse du serveur.       -->
+        @if (enAttenteServeur() && contenantChoisi() === choix) {
+          <div class="loader-attente" role="status" aria-live="polite">
+            <span></span><span></span><span></span>
+          </div>
+        }
+      </div>
+    }
+
+  </div>
+
+  <!-- ================================================================== -->
+  <!-- ZONE DE RETROACTION : message texte affiche apres la reponse.        -->
+  <!-- Mêmes classes .correct / .wrong que le QCM pour cohérence visuelle.  -->
+  <!-- En cas de "question passee", on n'applique aucune zone rouge :       -->
+  <!-- contenantChoisi() est null donc estMauvaiseReponseChoisie() est      -->
+  <!-- toujours faux dans ce cas, automatiquement.                          -->
+  <!-- ================================================================== -->
+  @if (reponseResult() !== null) {
+    <div
+      class="dnd-feedback"
+      [class.correct]="reponseResult()!.correct"
+      [class.wrong]="!reponseResult()!.correct"
+      role="alert"
+      aria-live="assertive"
+    >
+      <!-- messageFeedback() est un computed qui choisit le bon message  -->
+      <!-- selon le cas (bon, mauvais, ou question passee).              -->
+      <p class="feedback-message">{{ messageFeedback() }}</p>
+    </div>
+
+    <!-- Bouton "Question suivante" affiche uniquement apres la         -->
+    <!-- reception du resultat. Class .btn-secondary copiee depuis      -->
+    <!-- game.scss (declaree localement plus bas pour que les styles    -->
+    <!-- du composant fils soient autonomes).                           -->
+    <div class="dnd-actions">
+      <button
+        type="button"
+        class="btn-secondary"
+        (click)="surQuestionSuivante()"
+      >
+        Question suivante →
+      </button>
+    </div>
+  }
+
+</section>

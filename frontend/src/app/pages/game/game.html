@@ -86,7 +86,6 @@
     <!-- --- État chargement --- -->
     @if (isLoading()) {
       <div class="game-loading" role="status" aria-live="polite">
-        <span class="loading-spinner" aria-hidden="true">⏳</span>
         <p>Chargement des questions…</p>
       </div>
     }
@@ -94,7 +93,7 @@
     <!-- --- Message d'erreur --- -->
     @if (erreur()) {
       <div class="game-error" role="alert">
-        ⚠️ {{ erreur() }}
+        {{ erreur() }}
       </div>
     }
 
@@ -114,6 +113,26 @@
         <h2 class="question-enonce">{{ currentQuestion().enonce }}</h2>
 
       </div>
+
+      <!-- ============================================================ -->
+      <!-- BASCULE QCM <-> DRAG AND DROP                                  -->
+      <!-- En mode produit_contenant : on affiche le composant fils     -->
+      <!-- GameDnd qui gere lui-meme la zone interactive (drag, drop,    -->
+      <!-- feedback, bouton suivant). Sinon : QCM classique inchange.   -->
+      <!-- ============================================================ -->
+      @if (estDragAndDrop()) {
+
+        <app-game-dnd
+          [question]="currentQuestion()"
+          [reponseResult]="reponseResult()"
+          [enAttenteServeur]="enAttenteServeur()"
+          [numeroQuestion]="numeroQuestion()"
+          [totalQuestions]="questions().length"
+          (valider)="onValiderDnd($event)"
+          (questionSuivante)="onQuestionSuivanteDnd()"
+        />
+
+      } @else {
 
       <!-- -------------------------------------------------------- -->
       <!-- GRILLE DES 4 CHOIX DE RÉPONSE                            -->
@@ -171,10 +190,6 @@
           aria-live="assertive"
         >
 
-          <!-- Icône et message principal -->
-          <p class="result-icon">
-            {{ reponseResult()!.correct ? '✅' : '❌' }}
-          </p>
           <p class="result-message">
             @if (reponseResult()!.correct) {
               Bonne réponse ! +{{ reponseResult()!.score_obtenu }} point(s)
@@ -185,7 +200,7 @@
 
           <!-- Toujours afficher la bonne réponse pour apprendre -->
           <p class="result-bonne-reponse">
-            ✔ Bonne réponse : <strong>{{ reponseResult()!.bonne_reponse }}</strong>
+            Bonne réponse : <strong>{{ reponseResult()!.bonne_reponse }}</strong>
           </p>
 
         </div>
@@ -242,6 +257,9 @@
 
       </div>
 
+      }
+      <!-- Fin @else (mode QCM classique) -->
+
     }
     <!-- Fin @if currentQuestion() -->
 
@@ -261,6 +279,10 @@
   <!-- aria-label donne un nom à la zone pour qu'elle soit          -->
   <!-- annoncée comme "Raccourcis clavier" plutôt que "complément". -->
   <!-- ============================================================ -->
+  <!-- Garde-fou : la barre n'a aucun sens en mode drag and drop    -->
+  <!-- (les raccourcis 1-4 / Entree / P n'ont aucun effet visible). -->
+  <!-- On la masque pour ne pas afficher d'indication trompeuse.     -->
+  @if (!estDragAndDrop()) {
   <aside class="keyboard-help" aria-label="Raccourcis clavier">
 
     <!-- Premier raccourci : touches 1 à 4 pour choisir une réponse -->
@@ -290,5 +312,7 @@
     </span>
 
   </aside>
+  }
+  <!-- Fin @if !estDragAndDrop() -->
 
 </div>

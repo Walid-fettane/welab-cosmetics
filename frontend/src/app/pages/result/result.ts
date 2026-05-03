@@ -90,23 +90,11 @@ export class Result implements OnInit {
    */
   messageFelicitation = computed(() => {
     const pct = this.pourcentage();
-    if (pct >= 90) return '🏆 Exceptionnel ! Tu es un expert en cosmétique !';
-    if (pct >= 70) return '🌟 Très bien ! Tu maîtrises bien le sujet !';
-    if (pct >= 50) return '👍 Pas mal ! Continue à apprendre !';
-    if (pct >= 30) return '📚 C\'est un bon début, revise et recommence !';
-    return '💪 Ne te décourage pas, la prochaine fois sera meilleure !';
-  });
-
-  /**
-   * Emoji représentant le niveau de performance (trophée, étoile, etc.).
-   */
-  emojiNiveau = computed(() => {
-    const pct = this.pourcentage();
-    if (pct >= 90) return '🏆';
-    if (pct >= 70) return '🌟';
-    if (pct >= 50) return '🥈';
-    if (pct >= 30) return '🥉';
-    return '🎯';
+    if (pct >= 90) return 'Exceptionnel. Vous êtes un expert en cosmétique.';
+    if (pct >= 70) return 'Très bien. Vous maîtrisez bien le sujet.';
+    if (pct >= 50) return 'Pas mal. Continuez à apprendre.';
+    if (pct >= 30) return 'C\'est un bon début, révisez et recommencez.';
+    return 'Ne vous découragez pas, la prochaine fois sera meilleure.';
   });
 
   // ------------------------------------------------------------------

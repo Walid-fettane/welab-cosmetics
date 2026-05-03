@@ -10,7 +10,6 @@
     <!-- ============================================================ -->
     @if (isLoading()) {
       <div class="result-loading" role="status" aria-live="polite">
-        <span aria-hidden="true">⏳</span>
         <p>Calcul du score final…</p>
       </div>
     }
@@ -19,9 +18,6 @@
     <!-- Contenu principal (affiché une fois le chargement terminé)   -->
     <!-- ============================================================ -->
     @if (!isLoading()) {
-
-      <!-- Emoji du niveau de performance (trophée, étoile...) -->
-      <div class="result-emoji" aria-hidden="true">{{ emojiNiveau() }}</div>
 
       <!-- Titre -->
       <h1 class="result-title">Partie terminée !</h1>

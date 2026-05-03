@@ -5,12 +5,9 @@
 
   <div class="pseudo-card">
 
-    <!-- Icône décorative -->
-    <div class="pseudo-logo" aria-hidden="true">🎮</div>
-
     <!-- Titre de la section -->
-    <h1 class="pseudo-title">Qui es-tu ?</h1>
-    <p class="pseudo-subtitle">Choisis un pseudo pour commencer ta partie.</p>
+    <h1 class="pseudo-title">Qui êtes-vous ?</h1>
+    <p class="pseudo-subtitle">Choisissez un pseudo pour commencer votre partie.</p>
 
     <!-- Formulaire de saisie du pseudo -->
     <!-- (ngSubmit) : quand le joueur appuie sur Entrée, appelle jouer() -->
@@ -20,7 +17,7 @@
       <!-- [value]="pseudo()" lit la valeur du signal -->
       <!-- (input)="..." met à jour le signal quand le joueur tape -->
       <div class="form-group">
-        <label for="pseudo-input" class="form-label">Ton pseudo</label>
+        <label for="pseudo-input" class="form-label">Votre pseudo</label>
         <input
           id="pseudo-input"
           type="text"
@@ -39,7 +36,7 @@
       <!-- @if est la syntaxe Angular moderne (remplace *ngIf) -->
       @if (erreur()) {
         <p class="form-error" id="pseudo-error" role="alert">
-          ⚠️ {{ erreur() }}
+          {{ erreur() }}
         </p>
       }
 

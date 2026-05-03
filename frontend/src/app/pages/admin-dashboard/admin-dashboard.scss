@@ -334,6 +334,98 @@ $color-warning:    #fde047;
   }
 }
 
+// ============== BANDEAU D'INFORMATION ==============
+
+// Bandeau bleu translucide affiche en haut du dashboard pour
+// expliquer la limitation du localStorage cote admin DnD.
+.info-banner {
+  max-width: 1100px;
+  margin: 0 auto 1.5rem auto;
+  padding: 1rem 1.25rem;
+  background: rgba(96, 165, 250, 0.12);
+  border: 1px solid rgba(96, 165, 250, 0.35);
+  border-left: 4px solid #60a5fa;
+  border-radius: 0.75rem;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  box-sizing: border-box;
+
+  p {
+    margin: 0;
+  }
+
+  // Espace entre les deux paragraphes du bandeau (sans utiliser de
+  // margin sur les <p> qui auraient un effet de bord).
+  p + p {
+    margin-top: 0.5rem;
+  }
+}
+
+// ============== SECTION IMAGES DnD DANS LE FORMULAIRE ==============
+
+.dnd-fieldset {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem 1.25rem 1.25rem;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.dnd-legend {
+  font-weight: 700;
+  color: $color-pink;
+  padding: 0 0.5rem;
+  font-size: 0.95rem;
+}
+
+// Apercu de l'image selectionnee : carre fixe de 80px, fond
+// translucide pour rester lisible meme sur SVG aux teintes claires.
+.image-preview {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 0.5rem;
+  padding: 0.25rem;
+  box-sizing: border-box;
+  display: block;
+}
+
+// Variante "Aucune image" : on remplace le SVG par un point d'inter-
+// rogation centre, comme dans le placeholder du jeu, pour que l'admin
+// voie tout de suite ce que verra le joueur en l'absence d'image.
+.image-preview-vide {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 1.75rem;
+  font-weight: 700;
+  border-style: dashed;
+}
+
+.dnd-hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.45;
+
+  // Style discret pour le code dans la mention. On evite un fond
+  // trop voyant pour ne pas concurrencer les vrais champs du form.
+  code {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 0.25rem;
+    padding: 0.05rem 0.3rem;
+    font-size: 0.78rem;
+  }
+}
+
 // ============== ADAPTATION MOBILE ==============
 
 @media (max-width: 720px) {

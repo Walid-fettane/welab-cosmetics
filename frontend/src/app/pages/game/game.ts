@@ -26,9 +26,17 @@ import { Router } from '@angular/router';
 import { Api } from '../../services/api';
 import { GameState } from '../../services/game-state';
 import { Question, ReponseResult } from '../../models/interfaces';
+// Composant fils dedie au mini-jeu 2 (produit -> contenant) : remplace
+// les 4 boutons QCM par une interface drag and drop. Le composant
+// parent Game ne fait que l'inclure dans son template via @if.
+import { GameDnd, DndValiderPayload } from '../game-dnd/game-dnd';
 
 @Component({
   selector: 'app-game',
+  // Composant standalone : on declare ici les sous-composants utilises
+  // dans le template. GameDnd est conditionnellement affiche pour le
+  // mini-jeu 2, le reste du template (QCM) n'a pas besoin d'imports.
+  imports: [GameDnd],
   templateUrl: './game.html',
   styleUrl: './game.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -69,6 +77,14 @@ export class Game implements OnInit, OnDestroy {
 
   /** Message d'erreur si un appel API échoue. */
   erreur = signal('');
+
+  /**
+   * true pendant l'envoi de la reponse au backend en mode drag and
+   * drop. Sert a desactiver le drag dans le composant fils GameDnd
+   * pour empecher un joueur impatient de drop plusieurs fois en
+   * attendant la reponse du serveur. Inutilise en mode QCM.
+   */
+  enAttenteServeur = signal(false);
 
   /**
    * Moment exact où la question a été affichée (en millisecondes depuis 1970).
@@ -133,6 +149,17 @@ export class Game implements OnInit, OnDestroy {
    */
   totalQuestionsPartie = computed(() => {
     return this.gameState.miniJeux().reduce((total, mj) => total + mj.nb_questions, 0);
+  });
+
+  /**
+   * true si le mini-jeu courant est celui qui doit s'afficher en
+   * drag and drop (produit_contenant), false sinon (QCM classique).
+   * Le template utilise ce computed dans un @if pour basculer entre
+   * les deux modes sans dupliquer la logique.
+   */
+  estDragAndDrop = computed(() => {
+    const mj = this.currentMiniJeu();
+    return mj?.type === 'produit_contenant';
   });
 
   /** Libellé lisible du niveau (1→"Facile", 2→"Moyen", 3→"Difficile"). */
@@ -329,7 +356,7 @@ export class Game implements OnInit, OnDestroy {
         // qu'il regarde encore le résultat de la question validée.
       },
       error: () => {
-        this.erreur.set('Erreur lors de la validation. Réessaie.');
+        this.erreur.set('Erreur lors de la validation. Veuillez réessayer.');
       },
     });
   }
@@ -388,7 +415,7 @@ export class Game implements OnInit, OnDestroy {
         // se fera au clic sur "Question suivante", comme dans valider().
       },
       error: () => {
-        this.erreur.set('Erreur lors du passage de la question. Réessaie.');
+        this.erreur.set('Erreur lors du passage de la question. Veuillez réessayer.');
       },
     });
   }
@@ -481,6 +508,15 @@ export class Game implements OnInit, OnDestroy {
   // en paramètre de notre méthode.
   @HostListener('window:keydown', ['$event'])
   gererTouche(event: KeyboardEvent): void {
+    // Garde-fou drag and drop : en mode DnD, les boutons QCM ne sont
+    // pas affiches, donc les raccourcis 1-4 / Entree / P n'ont aucun
+    // effet visible. On retourne tot pour eviter des appels inutiles
+    // a valider() ou passer() qui changeraient l'etat partage du
+    // composant pendant qu'un drag and drop est en cours.
+    if (this.estDragAndDrop()) {
+      return;
+    }
+
     // Sécurité : si le joueur est en train de taper dans un champ texte
     // (input ou textarea), on ignore les raccourcis pour ne pas perturber
     // sa saisie. Peu probable sur la page game (pas de champ texte ici),
@@ -563,5 +599,65 @@ export class Game implements OnInit, OnDestroy {
       }
       return;
     }
+  }
+
+  // ------------------------------------------------------------------
+  // PONT QCM <-> DRAG AND DROP
+  //
+  // Les deux methodes ci-dessous servent uniquement a brancher les
+  // events emis par le composant fils GameDnd sur la logique deja
+  // existante du parent. Elles ne dupliquent pas la logique du QCM :
+  // elles se contentent d'encapsuler l'appel API (onValiderDnd) ou
+  // de deleguer a la methode existante (onQuestionSuivanteDnd).
+  // ------------------------------------------------------------------
+
+  /**
+   * Recoit l'evenement valider emis par GameDnd au moment du drop.
+   * Effectue l'appel API submitReponse exactement comme le ferait
+   * valider() en mode QCM, en utilisant le tempsReponseSec calcule
+   * par le composant fils (timer interne du DnD, plus precis que
+   * questionStartTime du parent dans ce contexte).
+   *
+   * Le signal enAttenteServeur passe a true pendant l'appel pour
+   * que le DnD bloque le drag (cdkDragDisabled lie a peutDrag()).
+   * Il repasse a false dans les deux cas (succes ou erreur) pour
+   * que l'interface se debloque coute que coute.
+   */
+  onValiderDnd(payload: DndValiderPayload): void {
+    const partie = this.gameState.partie();
+    // Garde-fous : pas de partie en cours, ou reponse deja validee
+    // (impossible normalement vu le cdkDragDisabled, mais on double).
+    if (!partie || this.reponseResult()) {
+      return;
+    }
+
+    this.enAttenteServeur.set(true);
+    this.api
+      .submitReponse(partie.id, payload.questionId, payload.reponse, payload.tempsReponseSec)
+      .subscribe({
+        next: (result) => {
+          // Memorise le resultat pour que le DnD affiche la rétroaction.
+          this.reponseResult.set(result);
+          // Met a jour le score de l'en-tete (meme signal que le QCM).
+          this.gameState.score.set(result.score_total_partie);
+          this.enAttenteServeur.set(false);
+        },
+        error: () => {
+          // En cas d'echec reseau, on debloque l'UI et on affiche
+          // un message d'erreur (le DnD redonne la main au joueur).
+          this.erreur.set('Erreur lors de la validation. Veuillez réessayer.');
+          this.enAttenteServeur.set(false);
+        },
+      });
+  }
+
+  /**
+   * Recoit l'evenement questionSuivante emis par GameDnd au clic
+   * sur son bouton dedie. Delegue a la methode existante du parent
+   * pour que la logique de transition (question / niveau / mini-jeu
+   * / fin de partie) reste centralisee dans questionSuivante().
+   */
+  onQuestionSuivanteDnd(): void {
+    this.questionSuivante();
   }
 }

@@ -11,7 +11,7 @@
 //   - supprimer une question apres confirmation
 //   - se deconnecter (suppression du jeton + retour au login)
 
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -23,11 +23,18 @@ import { forkJoin } from 'rxjs';
 
 import { AuthService } from '../../services/auth';
 import { ApiAdmin }    from '../../services/api-admin';
+import { AdminImagesStore } from '../../services/admin-images-store';
 import {
   QuestionAdmin,
   QuestionAdminPayload,
   MiniJeuAdmin,
 } from '../../models/admin-interfaces';
+// Bibliotheques d'images pretes a l'emploi : alimentent les deux menus
+// deroulants affiches uniquement pour le mini-jeu produit_contenant.
+import {
+  BIBLIOTHEQUE_PRODUITS,
+  BIBLIOTHEQUE_SUCCES,
+} from '../../data/question-images-mapping';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -40,9 +47,21 @@ import {
 })
 export class AdminDashboard {
   // ---- Services injectes via inject() (syntaxe Angular 14+) ----
-  private auth     = inject(AuthService);
-  private apiAdmin = inject(ApiAdmin);
-  private router   = inject(Router);
+  private auth        = inject(AuthService);
+  private apiAdmin    = inject(ApiAdmin);
+  private router      = inject(Router);
+  // Store des images choisies par l'admin pour les questions DnD.
+  // Il est public (pas de "private") afin de pouvoir etre utilise
+  // dans le template via la variable membre directement, mais on
+  // n'en a en realite besoin que dans les methodes ci-dessous.
+  private adminImages = inject(AdminImagesStore);
+
+  // ---- Bibliotheques d'images exposees au template ----
+  // Les deux constantes proviennent du fichier de mapping. On les
+  // declare ici en proprietes pour pouvoir y boucler avec @for
+  // dans le HTML (le template ne peut pas faire d'import direct).
+  bibliothequeProduits = BIBLIOTHEQUE_PRODUITS;
+  bibliothequeSucces   = BIBLIOTHEQUE_SUCCES;
 
   // ============================================================
   // Etat global de la page
@@ -78,6 +97,26 @@ export class AdminDashboard {
   choix4         = signal('');
   erreurForm     = signal('');
   enregistrement = signal(false);  // vrai pendant l'appel POST/PUT
+
+  // ---- Champs specifiques au mini-jeu DnD (produit_contenant) ----
+  // Chemins des SVG selectionnes dans les deux menus deroulants
+  // d'images. Chaine vide = "Aucune image" (cas par defaut).
+  selectedProduit = signal('');
+  selectedSucces  = signal('');
+
+  /**
+   * Indique si le mini-jeu actuellement selectionne est de type
+   * produit_contenant. Sert a afficher conditionnellement les deux
+   * menus deroulants d'images dans le formulaire. Recalcule
+   * automatiquement quand miniJeuId() ou miniJeux() changent.
+   */
+  estProduitContenant = computed(() => {
+    const idCourant = this.miniJeuId();
+    if (idCourant === null) return false;
+    // Array.find renvoie undefined si aucun element ne correspond.
+    const mj = this.miniJeux().find(m => m.id === idCourant);
+    return mj?.type === 'produit_contenant';
+  });
 
   // Le constructor n'a pas de parametres (les services sont recuperes
   // via inject() ci-dessus). On s'en sert juste pour declencher le
@@ -156,6 +195,11 @@ export class AdminDashboard {
     this.choix2.set('');
     this.choix3.set('');
     this.choix4.set('');
+    // Reset des deux menus deroulants d'images : a l'ouverture en
+    // mode "ajout", on part toujours de "Aucune image" pour ne pas
+    // herite par accident d'une selection precedente.
+    this.selectedProduit.set('');
+    this.selectedSucces.set('');
     this.erreurForm.set('');
     this.formOuvert.set(true);
   }
@@ -181,6 +225,13 @@ export class AdminDashboard {
     this.choix2.set(q.choixPossibles[1] ?? '');
     this.choix3.set(q.choixPossibles[2] ?? '');
     this.choix4.set(q.choixPossibles[3] ?? '');
+    // Pre-remplissage des deux menus deroulants d'images : on lit
+    // le store local pour retrouver d'eventuels chemins enregistres
+    // lors d'une precedente saisie. Si aucune entree n'existe pour
+    // cette question, on remet "Aucune image" (chaine vide).
+    const imagesEnregistrees = this.adminImages.getImagesPourQuestion(q.id);
+    this.selectedProduit.set(imagesEnregistrees?.produit ?? '');
+    this.selectedSucces.set(imagesEnregistrees?.succes ?? '');
     this.erreurForm.set('');
     this.formOuvert.set(true);
   }
@@ -261,8 +312,29 @@ export class AdminDashboard {
       : this.apiAdmin.createQuestion(payload);
 
     requete.subscribe({
-      next: () => {
+      next: (questionEnregistree) => {
         this.enregistrement.set(false);
+
+        // ---- Synchronisation du store d'images admin ----
+        // Apres le succes de l'API, on a un id de question fiable
+        // (id existant en mode modification, id genere par la base
+        // en mode ajout). On peut donc enregistrer ou supprimer
+        // l'eventuel mapping d'images cote localStorage.
+        const idQuestion = questionEnregistree.id;
+        const produit    = this.selectedProduit();
+        const succes     = this.selectedSucces();
+        if (this.estProduitContenant() && produit !== '' && succes !== '') {
+          // L'admin a choisi les deux images dans la bibliotheque :
+          // on memorise le couple pour ce questionId.
+          this.adminImages.setImagesPourQuestion(idQuestion, produit, succes);
+        } else {
+          // Cas "Aucune image" (au moins l'un des deux menus vides) :
+          // on s'assure qu'aucune entree obsolete ne reste pour
+          // cette question. removeImagesPourQuestion est sans effet
+          // si la cle n'existe pas, donc l'appel est sans risque.
+          this.adminImages.removeImagesPourQuestion(idQuestion);
+        }
+
         this.fermer();
         this.rechargerQuestions();
       },
@@ -298,9 +370,19 @@ export class AdminDashboard {
       return;
     }
     this.apiAdmin.deleteQuestion(q.id).subscribe({
-      next: () => this.rechargerQuestions(),
+      next: () => {
+        // Nettoyage du mapping local : si la question avait des
+        // images enregistrees dans le store admin, on les supprime
+        // pour eviter de garder des entrees orphelines dans
+        // localStorage apres la disparition de la question.
+        this.adminImages.removeImagesPourQuestion(q.id);
+        this.rechargerQuestions();
+      },
       error: (err: HttpErrorResponse) => {
         if (err.status === 404) {
+          // Le serveur dit que la question n'existe deja plus :
+          // on profite du passage pour nettoyer le store local.
+          this.adminImages.removeImagesPourQuestion(q.id);
           this.rechargerQuestions();
         } else if (err.status !== 401) {
           this.erreurGlobale.set('Erreur lors de la suppression.');

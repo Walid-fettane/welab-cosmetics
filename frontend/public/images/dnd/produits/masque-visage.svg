@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 170" width="200" height="170">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#86efac"/>
+      <stop offset="100%" stop-color="#16a34a"/>
+    </linearGradient>
+  </defs>
+  <!-- Visage (ovale rose) en arrière-plan -->
+  <ellipse cx="100" cy="90" rx="50" ry="60" fill="#fce7f3" stroke="#a855f7" stroke-width="2"/>
+  <!-- Yeux fermés (lignes) -->
+  <path d="M 78 75 Q 84 73, 90 75" stroke="#7c3aed" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M 110 75 Q 116 73, 122 75" stroke="#7c3aed" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <!-- Bouche petite -->
+  <path d="M 92 115 Q 100 118, 108 115" stroke="#7c3aed" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <!-- Pâte verte du masque (tâches sur le visage) -->
+  <ellipse cx="75" cy="60" rx="14" ry="8" fill="url(#g)" stroke="#16a34a" stroke-width="1.5" opacity="0.85"/>
+  <ellipse cx="125" cy="58" rx="13" ry="7" fill="url(#g)" stroke="#16a34a" stroke-width="1.5" opacity="0.85"/>
+  <ellipse cx="100" cy="95" rx="22" ry="10" fill="url(#g)" stroke="#16a34a" stroke-width="1.5" opacity="0.85"/>
+  <ellipse cx="80" cy="125" rx="11" ry="6" fill="url(#g)" stroke="#16a34a" stroke-width="1.5" opacity="0.85"/>
+  <ellipse cx="120" cy="130" rx="12" ry="6" fill="url(#g)" stroke="#16a34a" stroke-width="1.5" opacity="0.85"/>
+  <!-- Petits points (granulés) -->
+  <circle cx="70" cy="60" r="1.5" fill="#16a34a"/>
+  <circle cx="80" cy="62" r="1.5" fill="#16a34a"/>
+  <circle cx="120" cy="60" r="1.5" fill="#16a34a"/>
+  <circle cx="95" cy="93" r="1.5" fill="#16a34a"/>
+  <circle cx="110" cy="98" r="1.5" fill="#16a34a"/>
+</svg>

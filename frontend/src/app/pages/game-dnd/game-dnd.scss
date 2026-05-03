@@ -1,0 +1,616 @@
+// ==================================================================
+// Styles du composant drag and drop pour le mini-jeu 2.
+//
+// Reprend la palette du QCM (cf game.scss) pour rester coherent :
+// rose pastel comme couleur d'action, vert/rouge pour bon/faux,
+// effet glass card sur fonds violet de la page principale.
+//
+// Choix d'isolation : les classes .btn-primary, .btn-secondary et
+// .btn-skip sont aussi declarees ici (copiees de game.scss avec
+// commentaire) parce qu'un composant standalone Angular utilise par
+// defaut ViewEncapsulation.Emulated : les styles d'un composant
+// parent ne s'appliquent pas dans le DOM d'un composant fils.
+// ==================================================================
+
+// ------------------------------------------------------------------
+// Variables couleurs reprises a l'identique de game.scss pour que
+// le DnD partage exactement la meme palette que le QCM.
+// ------------------------------------------------------------------
+$color-white:      #ffffff;
+$color-pink:       #f9a8d4;
+$color-pink-hover: #f472b6;
+$color-correct:    #4ade80;
+$color-wrong:      #f87171;
+$color-card:       rgba(255, 255, 255, 0.10);
+$color-card-fort:  rgba(255, 255, 255, 0.15);
+
+// ==================================================================
+// CONTENEUR GLOBAL
+// Empilement vertical centre des differentes zones (instruction,
+// depart, cibles, feedback, actions). gap genereux entre la carte
+// produit et les contenants pour bien marquer les 2 zones distinctes.
+// ==================================================================
+.dnd-container {
+  // Largeur 100% du parent pour profiter du max-width: 640px du QCM
+  // (defini dans .game-main de game.scss).
+  width: 100%;
+  // flex-direction: column pour empiler les sections verticalement.
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  // Espacement vertical genereux (Amelioration 6 : 60px entre carte
+  // produit et zone des contenants pour clarifier les 2 zones).
+  gap: 2.5rem;
+}
+
+// ==================================================================
+// TEXTE D'INSTRUCTION (Amelioration 4)
+// Discret mais lisible : italique blanc translucide + petit fond
+// translucide pour faire ressortir les <kbd> embarques.
+// ==================================================================
+.dnd-instruction {
+  // Texte centre sur toute la largeur du composant.
+  text-align: center;
+  // Couleur claire avec opacite reduite pour rester discret.
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.95rem;
+  font-style: italic;
+  font-weight: 500;
+  // Petit padding pour aerer le texte par rapport au fond.
+  padding: 0.5rem 1rem;
+  // Marge interne nulle, le gap du conteneur gere l'ecart vertical.
+  margin: 0;
+  // Limite la largeur pour eviter les lignes trop longues sur grand ecran.
+  max-width: 36rem;
+  // Hauteur de ligne legerement augmentee pour la lisibilite.
+  line-height: 1.5;
+}
+
+// Petites touches stylisees integrees dans le texte d'instruction :
+// imite l'apparence visuelle d'une touche de clavier physique.
+.dnd-kbd {
+  // Police monospace pour rappeler l'aspect "informatique" / clavier.
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  font-size: 0.8rem;
+  font-weight: 700;
+  // Padding asymetrique : plus large que haut pour ressembler a une touche.
+  padding: 0.1rem 0.45rem;
+  // Bord legerement arrondi (pas un cercle, juste un coin doux).
+  border-radius: 0.3rem;
+  // Fond et bordure translucides pour ne pas surcharger le texte.
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: $color-white;
+  // Petite ombre vers le bas pour donner un effet de relief.
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
+  // Suppression de l'italique herite du paragraphe parent : les
+  // touches se lisent mieux en romain droit.
+  font-style: normal;
+  margin: 0 0.1rem;
+}
+
+// ==================================================================
+// ZONE DE DEPART (Amelioration 1 : carte produit + bouton Passer)
+// Layout flex pour aligner horizontalement la carte du produit et
+// le bouton Passer, en gardant le tout centre.
+// ==================================================================
+.zone-depart {
+  // Largeur pleine pour que le align-items: center du parent agisse
+  // sur le contenu de la zone (et non sur la zone elle-meme).
+  width: 100%;
+  // Disposition horizontale.
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  // Espacement entre la carte produit et le bouton Passer.
+  gap: 1.5rem;
+  // Permet au bouton Passer de passer SOUS la carte produit si l'ecran
+  // est trop etroit pour contenir les deux cote a cote.
+  flex-wrap: wrap;
+}
+
+// ------------------------------------------------------------------
+// .dnd-source : container CDK de la liste source (cdkDropList).
+// Aucun style visible (transparent), sert juste d'ancrage logique.
+// ------------------------------------------------------------------
+.dnd-source {
+  // Position relative sans effet visuel : permet aux animations CDK
+  // (preview, snap-back) de calculer leurs offsets correctement.
+  display: flex;
+  justify-content: center;
+}
+
+// ==================================================================
+// CARTE DU PRODUIT (cdkDrag) - Amelioration 5 et 6
+// Taille agrandie 220x220, fond clair semi-transparent pour
+// accentuer la lisibilite du SVG et de son label, ombre douce.
+// ==================================================================
+.produit-card {
+  // Tailles minimales fixees (Amelioration 6 : 220x220 sur desktop).
+  // min-width/min-height plutot que width/height pour autoriser le
+  // contenu a deborder legerement si le label est tres long.
+  min-width: 13.75rem;   // 220px
+  min-height: 13.75rem;  // 220px
+  // Padding genereux (Amelioration 6 : 24px) pour aerer le contenu.
+  padding: 1.5rem;
+  // Fond clair semi-transparent (Amelioration 5) : fait ressortir
+  // le SVG du produit malgre son texte interne en violet.
+  background: $color-card-fort;
+  // backdrop-filter: blur floute legerement le fond derriere la
+  // carte pour renforcer l'effet "verre depoli" (glass card).
+  backdrop-filter: blur(10px);
+  // Bordure blanche translucide pour delimiter la carte sans agresser.
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  // Coins tres arrondis (Amelioration 5 : 18px).
+  border-radius: 1.125rem;
+  // Disposition verticale du SVG et du label (centre dans la carte).
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+  // Curseur main "agrippante" pour signaler que la carte se deplace.
+  cursor: grab;
+  // Ombre rose tres legere : donne du relief sans casser le theme.
+  box-shadow: 0 6px 24px rgba(249, 168, 212, 0.22);
+  // Transitions douces sur les effets de survol et de press.
+  transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
+
+  // Au survol souris : leger soulevement + ombre plus marquee pour
+  // signaler l'interactivite.
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 28px rgba(249, 168, 212, 0.4);
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  // Pendant que le joueur tient la carte, on change le curseur.
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+// ------------------------------------------------------------------
+// Image SVG du produit (Amelioration 6 : 140-160px = ~9rem).
+// pointer-events: none evite que le navigateur declenche son propre
+// drag d'image natif qui interferait avec cdkDrag.
+// ------------------------------------------------------------------
+.produit-image {
+  width: 9rem;   // 144px ~ milieu de la fourchette 140-160 demandee
+  height: 9rem;
+  // Empeche la selection texte/image qui generait le drag.
+  pointer-events: none;
+  user-select: none;
+  // Petite ombre derriere l'image pour la decoller du fond clair.
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.15));
+}
+
+// Placeholder texte si SVG manquant (cas d'une question ajoutee
+// par l'admin sans image associee). Meme taille que l'image reelle.
+.produit-placeholder {
+  width: 9rem;
+  height: 9rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  color: rgba(255, 255, 255, 0.75);
+  font-weight: 700;
+}
+
+// Variante du placeholder utilisee dans le preview (encore plus grand).
+.produit-placeholder-preview {
+  width: 11rem;
+  height: 11rem;
+  font-size: 4.5rem;
+}
+
+// ------------------------------------------------------------------
+// Label externe du produit (Amelioration 5 : contraste max).
+// Blanc pur + ombre portee + grande taille = lisible meme avec un
+// fond pastel violet derriere.
+// ------------------------------------------------------------------
+.produit-nom {
+  color: $color-white;
+  font-weight: 700;
+  // Amelioration 6 : 1.4rem au lieu de 1rem actuel.
+  font-size: 1.4rem;
+  text-align: center;
+  // Amelioration 5 : ombre portee pour faire ressortir le label
+  // contre n'importe quel fond pastel.
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  user-select: none;
+  line-height: 1.2;
+}
+
+// ==================================================================
+// APERCU DRAG (cdkDragPreview)
+// Le CDK clone ce template et le suit avec le pointeur. On grossit
+// le SVG pour bonne visibilite, surtout sous le doigt sur mobile.
+// ==================================================================
+.produit-preview {
+  width: 11rem;
+  height: 11rem;
+  // Ombre marquee pour donner l'impression que l'apercu "flotte"
+  // au-dessus du reste de la page pendant le drag.
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.45));
+  pointer-events: none;
+}
+
+// ==================================================================
+// GRILLE DES CIBLES (Amelioration 6 : grid 4 colonnes desktop).
+// gap 24px (1.5rem) entre les cartes pour aerer.
+// ==================================================================
+.dnd-targets {
+  width: 100%;
+  display: grid;
+  // 4 colonnes egales sur desktop / tablette large.
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+}
+
+// ==================================================================
+// ZONE DE DROP INDIVIDUELLE (Amelioration 5 et 6).
+// Taille minimale 170x200, fond plus clair que le QCM, padding 20px,
+// position relative pour pouvoir centrer le loader en absolute.
+// ==================================================================
+.dnd-zone {
+  // Tailles minimales (Amelioration 6).
+  min-width: 10.625rem;   // 170px
+  min-height: 12.5rem;    // 200px
+  // Padding interne genereux pour aerer le SVG et le label.
+  padding: 1.25rem 0.75rem;
+  // Fond plus clair (Amelioration 5) : SVG du contenant mieux mis en valeur.
+  background: $color-card;
+  // Bordure 3px (Amelioration 3 : on garde la meme epaisseur dans
+  // tous les etats pour eviter un decalage visuel quand la couleur
+  // change).
+  border: 3px dashed rgba(255, 255, 255, 0.3);
+  border-radius: 0.875rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  // Position relative obligatoire pour que .loader-attente en absolute
+  // se positionne par rapport a la zone (et non au document entier).
+  position: relative;
+  // Transitions sur les changements de couleur/scale pour rendu doux.
+  transition: background 0.18s, border-color 0.18s, transform 0.15s, box-shadow 0.2s;
+
+  // Etat survol pendant un drag souris/doigt : zone mise en valeur
+  // pour signaler que le drop ici sera pris en compte.
+  &.drop-hover {
+    background: rgba(249, 168, 212, 0.22);
+    border: 3px solid $color-pink;
+    transform: scale(1.04);
+  }
+
+  // Etat pre-selectionne par le clavier (Amelioration 1 : effet visuel
+  // pendant les ~300ms entre l'appui touche 1-4 et le drop programmatique).
+  // L'animation pulse-pink est un keyframe declare plus bas.
+  &.pre-selectionnee {
+    background: rgba(249, 168, 212, 0.28);
+    border: 3px solid $color-pink-hover;
+    // L'animation joue exactement le temps du delai TS (300ms).
+    animation: dnd-pulse-pink 0.3s ease-out forwards;
+  }
+
+  // Etat correct (Amelioration 3 : bordure verte 3px + leger scale).
+  &.drop-correct {
+    background: rgba(74, 222, 128, 0.20);
+    border: 3px solid $color-correct;
+    // Leger scale pour mettre en valeur la bonne reponse.
+    transform: scale(1.05);
+    // Ombre verte douce qui souligne la zone correcte.
+    box-shadow: 0 0 18px rgba(74, 222, 128, 0.35);
+  }
+
+  // Etat mauvais (Amelioration 3 : bordure rouge 3px sur la zone choisie).
+  &.drop-wrong {
+    background: rgba(248, 113, 113, 0.20);
+    border: 3px solid $color-wrong;
+    box-shadow: 0 0 18px rgba(248, 113, 113, 0.3);
+  }
+
+  // Etat desactive (apres reponse ou pendant attente serveur).
+  &.drop-disabled {
+    cursor: not-allowed;
+    // On baisse legerement les zones non concernees par la reponse
+    // pour mettre en avant celles marquees correct/wrong.
+    &:not(.drop-correct):not(.drop-wrong) {
+      opacity: 0.55;
+    }
+  }
+}
+
+// ------------------------------------------------------------------
+// Image SVG du contenant (Amelioration 6 : 100-110px = ~6.5rem).
+// ------------------------------------------------------------------
+.contenant-image {
+  width: 6.5rem;   // 104px, milieu de la fourchette 100-110
+  height: 6.5rem;
+  pointer-events: none;
+  user-select: none;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
+}
+
+// Placeholder en cas d'absence de SVG (meme taille que l'image reelle).
+.contenant-placeholder {
+  width: 6.5rem;
+  height: 6.5rem;
+  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 700;
+}
+
+// ------------------------------------------------------------------
+// Label externe du contenant (Amelioration 5 : meme traitement
+// que le label produit, ajuste a sa taille plus petite).
+// ------------------------------------------------------------------
+.contenant-nom {
+  color: $color-white;
+  font-weight: 700;
+  // Amelioration 6 : 1.15rem.
+  font-size: 1.15rem;
+  text-align: center;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  line-height: 1.2;
+  user-select: none;
+}
+
+// ==================================================================
+// LOADER 3 POINTS pendant l'attente serveur.
+// Affiche au centre de la zone choisie (position absolute).
+// ==================================================================
+.loader-attente {
+  position: absolute;
+  // Centrage parfait (top:50% / left:50% + translate(-50%,-50%)).
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  gap: 0.4rem;
+  // Fond translucide noir pour lisibilite des points sur image claire.
+  background: rgba(0, 0, 0, 0.6);
+  padding: 0.55rem 0.8rem;
+  border-radius: 999px;
+
+  // Chaque <span> represente un point lumineux qui pulse.
+  span {
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 50%;
+    background: $color-pink;
+    animation: dnd-pulse 1.2s ease-in-out infinite;
+  }
+
+  // Decalage progressif pour creer l'effet "vague" des 3 points.
+  span:nth-child(2) { animation-delay: 0.2s; }
+  span:nth-child(3) { animation-delay: 0.4s; }
+}
+
+@keyframes dnd-pulse {
+  0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+  40%           { opacity: 1.0; transform: scale(1.2); }
+}
+
+// ------------------------------------------------------------------
+// Animation utilisee sur la zone pre-selectionnee au clavier.
+// Joue UNE fois (forwards garde l'etat final), exactement le temps
+// que dure DELAI_ANIMATION_CLAVIER_MS (300ms cote TypeScript).
+// ------------------------------------------------------------------
+@keyframes dnd-pulse-pink {
+  0%   { transform: scale(1.0);  box-shadow: 0 0 0 0 rgba(249, 168, 212, 0.6); }
+  50%  { transform: scale(1.07); box-shadow: 0 0 18px 6px rgba(249, 168, 212, 0.5); }
+  100% { transform: scale(1.04); box-shadow: 0 0 0 0 rgba(249, 168, 212, 0); }
+}
+
+// ==================================================================
+// BANDEAU DE FEEDBACK (correct / wrong / passe).
+// Mêmes couleurs vert/rouge que le QCM pour cohérence.
+// ==================================================================
+.dnd-feedback {
+  width: 100%;
+  border-radius: 1rem;
+  padding: 1.1rem 1.4rem;
+  text-align: center;
+  // Petite animation d'apparition douce.
+  animation: dnd-slide-in 0.3s ease-out;
+
+  &.correct {
+    background: rgba(74, 222, 128, 0.18);
+    border: 1px solid rgba(74, 222, 128, 0.45);
+  }
+
+  &.wrong {
+    background: rgba(248, 113, 113, 0.18);
+    border: 1px solid rgba(248, 113, 113, 0.45);
+  }
+}
+
+@keyframes dnd-slide-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.feedback-message {
+  color: $color-white;
+  font-weight: 700;
+  font-size: 1.1rem;
+  margin: 0;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+
+  strong {
+    color: $color-pink;
+  }
+}
+
+// ------------------------------------------------------------------
+// Zone du bouton "Question suivante" sous le feedback.
+// Largeur pleine pour que le bouton herite de son flex:1.
+// ------------------------------------------------------------------
+.dnd-actions {
+  width: 100%;
+  display: flex;
+  gap: 0.75rem;
+}
+
+// ==================================================================
+// CLASSES BOUTONS REPRISES DE game.scss
+//
+// Justification : un composant standalone Angular utilise par defaut
+// ViewEncapsulation.Emulated, donc les selecteurs .btn-secondary et
+// .btn-skip declares dans game.scss ne s'appliquent PAS aux boutons
+// rendus dans le DOM de game-dnd. On les recopie ici pour garantir
+// le meme rendu visuel sans toucher au QCM.
+// ==================================================================
+
+// ----- Bouton "Question suivante" (Amelioration 2) -----
+// Repris a l'identique de .btn-secondary dans game.scss : contour
+// blanc, fond transparent, mêmes hover/focus.
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.12);
+  color: $color-white;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-radius: 50px;
+  padding: 0.875rem 2rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  // flex:1 pour que le bouton occupe toute la largeur de .dnd-actions.
+  flex: 1;
+  transition: background 0.2s, border-color 0.2s, transform 0.1s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.7);
+  }
+
+  &:active {
+    transform: scale(0.97);
+  }
+
+  &:focus-visible {
+    outline: 3px solid $color-white;
+    outline-offset: 3px;
+  }
+}
+
+// ----- Bouton "Passer" (Amelioration 1) -----
+// Repris a l'identique de .btn-skip dans game.scss : style gris/neutre
+// pour le distinguer du bouton principal "Valider" (rose) ou du bouton
+// secondaire "Question suivante" (contour blanc).
+.btn-skip {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.85);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50px;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  // flex:0 0 auto = "ne grandis pas, ne retrecis pas, garde ta taille
+  // naturelle". Empeche le bouton de prendre toute la largeur (pas
+  // l'action principale).
+  flex: 0 0 auto;
+  transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.1s;
+
+  &:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.5);
+    color: $color-white;
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  &:focus-visible {
+    outline: 3px solid $color-white;
+    outline-offset: 3px;
+  }
+}
+
+// Variante locale du bouton Passer pour le contexte DnD : pas de
+// flex car situe dans .zone-depart (flex parent), juste a cote de
+// la carte produit. On ajuste la taille pour s'aligner visuellement
+// avec la hauteur de la carte produit.
+.btn-skip-dnd {
+  font-size: 1.05rem;
+  padding: 0.9rem 1.75rem;
+}
+
+// ==================================================================
+// STYLES GLOBAUX DU CDK PENDANT LE DRAG
+// Le CDK ajoute automatiquement des classes au body et a l'apercu
+// drag-and-drop. On les retouche pour s'integrer au theme du jeu.
+// :global() force le selecteur a sortir de l'encapsulation du
+// composant (sinon il ne ciblerait pas le DOM injecte par le CDK
+// au niveau du body).
+// ==================================================================
+:global(.cdk-drag-preview) {
+  // Au-dessus de tous les autres elements pendant le drag.
+  z-index: 1000;
+  user-select: none;
+}
+
+:global(.cdk-drag-placeholder) {
+  // On rend invisible le "trou" laisse par l'element source pendant
+  // le drag (sinon le CDK insere un fantome gris qui rendrait la
+  // zone source desagreable visuellement).
+  opacity: 0;
+}
+
+:global(.cdk-drag-animating) {
+  // Animation par defaut du CDK pour le snap-back si pas drop sur
+  // cible. Valeur recommandee dans la doc officielle Angular CDK.
+  transition: transform 0.25s cubic-bezier(0, 0, 0.2, 1);
+}
+
+// ==================================================================
+// ADAPTATIONS RESPONSIVE (Amelioration 6)
+// Tablette et mobile : grille 2x2 pour les contenants (plus lisible
+// que 4 colonnes serrees), tailles SVG ajustees a la baisse.
+// ==================================================================
+
+// Tablette (entre 600 et 960px) : 4 colonnes deviennent 2x2 si
+// l'ecran est trop etroit pour 4 cartes a 170px minimum.
+@media (max-width: 960px) {
+  .dnd-targets {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .produit-image       { width: 7.5rem; height: 7.5rem; }
+  .produit-placeholder { width: 7.5rem; height: 7.5rem; font-size: 2.5rem; }
+  .contenant-image     { width: 5.5rem;  height: 5.5rem; }
+  .contenant-placeholder { width: 5.5rem; height: 5.5rem; }
+}
+
+// Mobile (sous 600px) : tailles encore reduites pour rester lisible
+// sur petit ecran sans deborder.
+@media (max-width: 600px) {
+  .dnd-container { gap: 1.75rem; }
+  .produit-card  {
+    min-width: 11rem; min-height: 11rem;
+    padding: 1rem;
+  }
+  .produit-image       { width: 5.5rem; height: 5.5rem; }
+  .produit-placeholder { width: 5.5rem; height: 5.5rem; font-size: 2rem; }
+  .produit-nom         { font-size: 1.15rem; }
+  .dnd-zone {
+    min-width: 8.5rem; min-height: 10rem;
+    padding: 0.85rem 0.5rem;
+  }
+  .contenant-image     { width: 4.75rem; height: 4.75rem; }
+  .contenant-placeholder { width: 4.75rem; height: 4.75rem; }
+  .contenant-nom       { font-size: 0.95rem; }
+  .dnd-targets         { gap: 0.85rem; }
+  .dnd-instruction     { font-size: 0.85rem; }
+}
