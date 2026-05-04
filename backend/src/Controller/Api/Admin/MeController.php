@@ -11,6 +11,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
 
+// final = empêche l'héritage (convention Symfony pour les contrôleurs).
 final class MeController extends AbstractController
 {
     // Renvoie les informations de l'administrateur actuellement connecte (identifie via son JWT).
@@ -18,7 +19,13 @@ final class MeController extends AbstractController
     #[Route('/api/admin/me', name: 'api_admin_me', methods: ['GET'])]
     public function me(): JsonResponse
     {
-        // On recupere l'utilisateur connecte fourni par Symfony Security a partir du JWT.
+        // getUser() est fournie par AbstractController. Elle renvoie l'objet Utilisateur
+        // (UserInterface) extrait du JWT par Symfony Security, ou null si la requête
+        // n'est pas authentifiée. Comme la route est protégée par le firewall api_admin
+        // (config/packages/security.yaml), on ne peut atteindre ce code que si
+        // l'utilisateur est bien connecté : $utilisateur ne sera donc jamais null ici.
+        // Le commentaire /** @var Utilisateur $utilisateur */ informe l'EDI/PHPStan
+        // du type concret (par défaut getUser() est typée UserInterface).
         /** @var Utilisateur $utilisateur */
         $utilisateur = $this->getUser();
 
@@ -27,7 +34,10 @@ final class MeController extends AbstractController
             'id' => $utilisateur->getId(),
             'email' => $utilisateur->getEmail(),
             'roles' => $utilisateur->getRoles(),
-            // La date de creation est formatee au standard ISO 8601 pour etre lue facilement par le frontend.
+            // ?->format(...) = nullsafe operator. Si getDateCreation() renvoie null,
+            // l'expression vaut null sans déclencher d'erreur.
+            // \DateTimeInterface::ATOM est une constante = format ISO 8601 standard
+            // (ex. "2026-05-04T10:30:00+00:00"), facile à parser côté frontend.
             'dateCreation' => $utilisateur->getDateCreation()?->format(\DateTimeInterface::ATOM),
         ]);
     }

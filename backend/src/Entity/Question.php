@@ -16,7 +16,9 @@ class Question
     #[ORM\Column]
     private ?int $id = null;
 
+    // length: 255 = colonne SQL VARCHAR(255).
     #[ORM\Column(length: 255)]
+    // \' échappe l'apostrophe à l'intérieur d'une chaîne PHP entourée de '...'.
     #[Assert\NotBlank(message: 'L\'enonce est obligatoire')]
     private ?string $enonce = null;
 
@@ -25,16 +27,26 @@ class Question
     private ?string $elementADeviner = null;
 
     #[ORM\Column]
+    // Assert\Choice : la valeur doit appartenir au tableau choices, sinon erreur de validation.
     #[Assert\Choice(choices: [1, 2, 3], message: 'La difficulte doit etre 1, 2 ou 3')]
     private ?int $difficulte = null;
 
+    // type: 'json' demande à Doctrine de stocker le tableau PHP sous forme de JSON
+    // (colonne SQL JSONB en PostgreSQL). La conversion array <-> JSON est automatique
+    // à la lecture comme à l'écriture.
     #[ORM\Column(type: 'json')]
     private array $choixPossibles = [];
 
+    // ManyToOne : plusieurs Question appartiennent à un seul MiniJeu.
+    // inversedBy: 'questions' nomme la Collection côté MiniJeu (relation bidirectionnelle).
     #[ORM\ManyToOne(inversedBy: 'questions')]
+    // JoinColumn(nullable: false) : la colonne mini_jeu_id en base ne peut pas être NULL.
     #[ORM\JoinColumn(nullable: false)]
     private ?MiniJeu $miniJeu = null;
 
+    // OneToMany : une Question possède plusieurs Reponse.
+    // cascade: ['remove'] : si on supprime la Question, Doctrine supprime aussi ses Reponse.
+    // (Pas de 'persist' ici : les Reponse sont créées via le contrôleur, pas via la Question.)
     #[ORM\OneToMany(mappedBy: 'question', targetEntity: Reponse::class, cascade: ['remove'])]
     private Collection $reponses;
 

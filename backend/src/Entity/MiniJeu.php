@@ -16,8 +16,11 @@ class MiniJeu
     #[ORM\Column]
     private ?int $id = null;
 
+    // length: 50 = colonne SQL VARCHAR(50).
     #[ORM\Column(length: 50)]
     #[Assert\NotBlank]
+    // Assert\Choice : restreint la valeur aux 3 chaînes listées dans choices.
+    // C'est l'équivalent applicatif d'un ENUM SQL (validation côté Symfony).
     #[Assert\Choice(
         choices: ['ingredient_produit', 'produit_contenant', 'action_pole'],
         message: 'Type invalide. Choix possibles : ingredient_produit, produit_contenant, action_pole'
@@ -29,12 +32,19 @@ class MiniJeu
     #[Assert\Length(max: 100)]
     private ?string $nomMiniJeu = null;
 
+    // nullable: true autorise NULL en base SQL (la description est optionnelle).
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $descriptionMiniJeu = null;
 
+    // OneToMany : un MiniJeu possède plusieurs Question.
+    // mappedBy: 'miniJeu' désigne la propriété côté Question qui pointe vers MiniJeu.
     #[ORM\OneToMany(mappedBy: 'miniJeu', targetEntity: Question::class, cascade: ['persist', 'remove'])]
     private Collection $questions;
 
+    // ManyToMany : côté INVERSE de la relation déclarée dans Partie.
+    // mappedBy: 'miniJeux' indique la propriété côté Partie. Ici on n'écrit RIEN
+    // dans la table de liaison 'utilise' : le côté propriétaire (qui pilote la
+    // table de jointure) est Partie, pas MiniJeu.
     #[ORM\ManyToMany(targetEntity: Partie::class, mappedBy: 'miniJeux')]
     private Collection $parties;
 
